@@ -1,6 +1,7 @@
 # Contrib.KubeClient.CustomResources
 
-[![Build status](https://ci.appveyor.com/api/projects/status/8gotth3a2mh95ybs?svg=true)](https://ci.appveyor.com/project/AXOOM/contrib-kubeclient-customresources)
+[![NuGet package](https://img.shields.io/nuget/v/Contrib.KubeClient.CustomResources.svg)](https://www.nuget.org/packages/Contrib.KubeClient.CustomResources/)
+[![Build status](https://img.shields.io/appveyor/ci/AXOOM/contrib-kubeclient-customresources.svg)](https://ci.appveyor.com/project/AXOOM/contrib-kubeclient-customresources)
 
 KubeClient contribution to simplify work with CustomResources
 
