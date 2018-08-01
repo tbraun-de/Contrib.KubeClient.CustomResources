@@ -1,9 +1,11 @@
-﻿using KubeClient;
+﻿using JetBrains.Annotations;
+using KubeClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Contrib.KubeClient.CustomResources
 {
+    [PublicAPI]
     public class KubeApiClientFactory
     {
         private readonly ILogger<KubeApiClientFactory> _logger;

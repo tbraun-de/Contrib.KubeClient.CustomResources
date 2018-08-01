@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using HTTPlease;
+using JetBrains.Annotations;
 using KubeClient;
 using KubeClient.Models;
 using KubeClient.ResourceClients;
@@ -8,6 +9,7 @@ using KubeClient.ResourceClients;
 namespace Contrib.KubeClient.CustomResources
 {
     [ExcludeFromCodeCoverage]
+    [UsedImplicitly]
     public class CustomResourceClient : KubeResourceClient, ICustomResourceClient
     {
         public CustomResourceClient(IKubeApiClient client)
