@@ -24,6 +24,6 @@ namespace Contrib.KubeClient.CustomResources
         public Task<CustomResource<TResource>> FindByNameAsync(string name)
             => Task.FromResult(_resources.First(res => res.Metadata.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase)));
 
-        public Task<long> Count() => Task.FromResult(_resources.LongCount());
+        public Task<long> CountAsync() => Task.FromResult(_resources.LongCount());
     }
 }

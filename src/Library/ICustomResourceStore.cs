@@ -8,6 +8,7 @@ namespace Contrib.KubeClient.CustomResources
     /// <summary>
     /// A storage for custom resources.
     /// </summary>
+    [PublicAPI]
     public interface ICustomResourceStore<TResource>
     {
         /// <summary>
@@ -31,6 +32,6 @@ namespace Contrib.KubeClient.CustomResources
         /// <summary>
         /// Counts all stored resources
         /// </summary>
-        Task<long> Count();
+        Task<long> CountAsync();
     }
 }
