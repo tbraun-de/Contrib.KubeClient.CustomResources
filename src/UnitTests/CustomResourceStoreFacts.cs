@@ -42,7 +42,7 @@ namespace Contrib.KubeClient.CustomResources
             {
                 CustomResourceFactory.Create(spec: "test123", @namespace: "234"),
                 CustomResourceFactory.Create(spec: "test123", @namespace: "345"),
-                CustomResourceFactory.Create(spec: "test123", @namespace: "456"),
+                CustomResourceFactory.Create(spec: "test123", @namespace: "456")
             };
             resources.AddRange(expectedResources);
 
@@ -62,7 +62,7 @@ namespace Contrib.KubeClient.CustomResources
             var expectedResources = new List<CustomResource<string>>
             {
                 CustomResourceFactory.Create(spec: "test12134", name: "745"),
-                CustomResourceFactory.Create(spec: "test12134", name: "234"),
+                CustomResourceFactory.Create(spec: "test12134", name: "234")
             };
             List<CustomResource<string>> resources = new List<CustomResource<string>>
             {
@@ -119,6 +119,25 @@ namespace Contrib.KubeClient.CustomResources
 
             Func<Task> find = async () => await store.FindByNameAsync("not_in_there");
             find.Should().Throw<InvalidOperationException>();
+        }
+
+        [Fact]
+        public async Task GettingAllResourcesReturnsAll()
+        {
+            var expectedResources = new List<CustomResource<string>>
+            {
+                CustomResourceFactory.Create(spec: "test12134", name: "745"),
+                CustomResourceFactory.Create(spec: "test12134", name: "234")
+            };
+
+            var watcherMock = new Mock<ICustomResourceWatcher<string>>();
+            watcherMock.SetupGet(expression: mock => mock.RawResources).Returns(expectedResources);
+
+            var store = new CustomResourceStore<string>(watcher: watcherMock.Object);
+
+            var resourcesFound = await store.GetAllAsync();
+
+            resourcesFound.Should().BeEquivalentTo(expectedResources);
         }
     }
 }
