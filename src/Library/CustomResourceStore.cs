@@ -15,6 +15,9 @@ namespace Contrib.KubeClient.CustomResources
             watcher.StartWatching();
         }
 
+        public Task<IEnumerable<CustomResource<TResource>>> GetAllAsync()
+            => Task.FromResult(_resources);
+
         public Task<IEnumerable<CustomResource<TResource>>> FindAsync(Func<CustomResource<TResource>, bool> query)
             => Task.FromResult(_resources.Where(query));
 

@@ -12,6 +12,12 @@ namespace Contrib.KubeClient.CustomResources
     public interface ICustomResourceStore<TResource>
     {
         /// <summary>
+        /// Gets all resources.
+        /// </summary>
+        /// <returns></returns>
+        Task<IEnumerable<CustomResource<TResource>>> GetAllAsync();
+
+        /// <summary>
         /// Finds a resource by its metadata.name property.
         /// </summary>
         /// <exception cref="T:System.InvalidOperationException">No element in the store has the given <paramref name="name"/></exception>
