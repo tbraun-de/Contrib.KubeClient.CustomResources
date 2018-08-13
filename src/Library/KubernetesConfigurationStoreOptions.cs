@@ -1,5 +1,8 @@
-﻿namespace Contrib.KubeClient.CustomResources
+﻿using JetBrains.Annotations;
+
+namespace Contrib.KubeClient.CustomResources
 {
+    [PublicAPI]
     public class KubernetesConfigurationStoreOptions
     {
         /// <summary>

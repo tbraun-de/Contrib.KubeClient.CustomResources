@@ -1,9 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 using KubeClient.Models;
 
 namespace Contrib.KubeClient.CustomResources
 {
     [ExcludeFromCodeCoverage]
+    [PublicAPI]
     public class CustomResource<TSpec> : KubeResourceV1
     {
         public TSpec Spec { get; set; }

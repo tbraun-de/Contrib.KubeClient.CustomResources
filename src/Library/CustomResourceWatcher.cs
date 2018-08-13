@@ -12,7 +12,7 @@ namespace Contrib.KubeClient.CustomResources
 {
     public abstract class CustomResourceWatcher<TSpec> : ICustomResourceWatcher<TSpec>, IDisposable
     {
-        private const string RESOURCE_VERSION_NONE = "0";
+        private const string resourceVersionNone = "0";
         private readonly Dictionary<string, CustomResource<TSpec>> _resources = new Dictionary<string, CustomResource<TSpec>>();
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly ILogger _logger;
@@ -21,7 +21,7 @@ namespace Contrib.KubeClient.CustomResources
         private readonly string _crdPluralName;
         private readonly string _namespace;
         private IDisposable _subscription;
-        private string _lastSeenResourceVersion = RESOURCE_VERSION_NONE;
+        private string _lastSeenResourceVersion = resourceVersionNone;
 
         protected CustomResourceWatcher(ILogger logger, ICustomResourceClient client, string apiGroup, string crdPluralName, string @namespace)
         {
@@ -120,7 +120,7 @@ namespace Contrib.KubeClient.CustomResources
             {
                 _resources.Clear();
                 _logger.LogDebug($"Cleaned resource cache for '{typeof(TSpec).Name}' as the last seen resource version ({_lastSeenResourceVersion}) is gone.");
-                _lastSeenResourceVersion = RESOURCE_VERSION_NONE;
+                _lastSeenResourceVersion = resourceVersionNone;
             }
             else
             {
