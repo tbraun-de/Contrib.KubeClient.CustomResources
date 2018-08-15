@@ -20,7 +20,7 @@ namespace Contrib.KubeClient.CustomResources
         /// <summary>
         /// Finds a resource by its metadata.name property.
         /// </summary>
-        /// <exception cref="T:System.InvalidOperationException">No element in the store has the given <paramref name="name"/></exception>
+        /// <exception cref="KeyNotFoundException">No element in the store has the given <paramref name="name"/></exception>
         Task<CustomResource<TResource>> FindByNameAsync([NotNull] string name);
 
         /// <summary>

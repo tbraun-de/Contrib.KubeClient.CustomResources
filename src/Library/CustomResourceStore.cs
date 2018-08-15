@@ -25,7 +25,13 @@ namespace Contrib.KubeClient.CustomResources
             => FindAsync(res => res.Metadata.Namespace.Equals(@namespace, StringComparison.InvariantCultureIgnoreCase));
 
         public Task<CustomResource<TResource>> FindByNameAsync(string name)
-            => Task.FromResult(_resources.First(res => res.Metadata.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase)));
+        {
+            var customResource = _resources.FirstOrDefault(res => res.Metadata.Name.Equals(name, StringComparison.InvariantCultureIgnoreCase));
+            if (customResource == null)
+                throw new KeyNotFoundException($"No such resource '{name}'");
+
+            return Task.FromResult(customResource);
+        }
 
         public Task<long> CountAsync() => Task.FromResult(_resources.LongCount());
     }

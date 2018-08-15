@@ -118,7 +118,7 @@ namespace Contrib.KubeClient.CustomResources
             var store = new CustomResourceStore<string>(watcher: watcherMock.Object);
 
             Func<Task> find = async () => await store.FindByNameAsync("not_in_there");
-            find.Should().Throw<InvalidOperationException>();
+            find.Should().Throw<KeyNotFoundException>();
         }
 
         [Fact]
