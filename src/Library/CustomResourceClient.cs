@@ -5,6 +5,7 @@ using JetBrains.Annotations;
 using KubeClient;
 using KubeClient.Models;
 using KubeClient.ResourceClients;
+using Microsoft.Extensions.Options;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -12,9 +13,13 @@ namespace Contrib.KubeClient.CustomResources
     [UsedImplicitly]
     public class CustomResourceClient : KubeResourceClient, ICustomResourceClient
     {
-        public CustomResourceClient(IKubeApiClient client)
+        private readonly TimeSpan _timeout;
+
+        public CustomResourceClient(IKubeApiClient client, IOptions<KubernetesConfigurationStoreOptions> options)
             : base(client)
-        {}
+        {
+            _timeout = options.Value.WatchTimeout;
+        }
 
         public IObservable<IResourceEventV1<CustomResource<TSpec>>> Watch<TSpec>(string apiGroup, string crdPluralName, string @namespace = "", string lastSeenResourceVersion = "0")
         {
@@ -26,7 +31,8 @@ namespace Contrib.KubeClient.CustomResources
             httpRequest = httpRequest
                          .WithRelativeUri($"{crdPluralName}")
                          .WithQueryParameter("watch", true)
-                         .WithQueryParameter("resourceVersion", lastSeenResourceVersion);
+                         .WithQueryParameter("resourceVersion", lastSeenResourceVersion)
+                         .WithQueryParameter("timeoutSeconds", _timeout.TotalSeconds);
 
             return ObserveEvents<CustomResource<TSpec>>(httpRequest);
         }
