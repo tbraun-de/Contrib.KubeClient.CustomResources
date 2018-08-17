@@ -22,6 +22,7 @@ namespace Contrib.KubeClient.CustomResources
         private readonly string _namespace;
         private IDisposable _subscription;
         private string _lastSeenResourceVersion = resourceVersionNone;
+        private string _specName;
 
         protected CustomResourceWatcher(ILogger logger, ICustomResourceClient client, string apiGroup, string crdPluralName, string @namespace)
         {
@@ -30,6 +31,7 @@ namespace Contrib.KubeClient.CustomResources
             _apiGroup = apiGroup;
             _crdPluralName = crdPluralName;
             _namespace = @namespace;
+            _specName = typeof(TSpec).Name;
         }
 
         public IEnumerable<TSpec> Resources => new ResourceMemento(_resources);
@@ -51,7 +53,7 @@ namespace Contrib.KubeClient.CustomResources
             DisposeSubscriptions();
             _subscription = _client.Watch<TSpec>(_apiGroup, _crdPluralName, _namespace, _lastSeenResourceVersion).Subscribe(OnNext, OnError, OnCompleted);
             OnConnected?.Invoke(this, EventArgs.Empty);
-            _logger.LogDebug($"Subscribed to {_crdPluralName}.");
+            _logger.LogInformation($"Subscribed to {_crdPluralName}.");
         }
 
         private void OnNext(IResourceEventV1<CustomResource<TSpec>> @event)
@@ -79,7 +81,7 @@ namespace Contrib.KubeClient.CustomResources
             if (_resources.ContainsKey(@event.Resource.GlobalName))
             {
                 _resources.Remove(@event.Resource.GlobalName);
-                _logger.LogInformation($"Removed resource '{typeof(TSpec).Name}' with name {@event.Resource.GlobalName}");
+                _logger.LogDebug("Removed resource '{0}' with name '{1}'", _specName, @event.Resource.GlobalName);
             }
         }
 
@@ -89,22 +91,22 @@ namespace Contrib.KubeClient.CustomResources
              && !_resources[@event.Resource.GlobalName].Metadata.ResourceVersion.Equals(@event.Resource.Metadata.ResourceVersion))
             {
                 _resources[@event.Resource.GlobalName] = @event.Resource;
-                _logger.LogInformation($"Modified resource '{typeof(TSpec).Name}' with name {@event.Resource.GlobalName}");
+                _logger.LogDebug("Modified resource '{0}' with name '{1}'", _specName, @event.Resource.GlobalName);
             }
             else if (!_resources.ContainsKey(@event.Resource.GlobalName))
             {
                 _resources.Add(@event.Resource.GlobalName, @event.Resource);
-                _logger.LogInformation($"Added resource '{typeof(TSpec).Name}' with name {@event.Resource.GlobalName}");
+                _logger.LogDebug("Added resource '{0}' with name '{1}'", _specName, @event.Resource.GlobalName);
             }
             else
             {
-                _logger.LogDebug($"Got resource '{typeof(TSpec).Name}' with name {@event.Resource.GlobalName} without changes");
+                _logger.LogDebug("Got resource '{0}' with name '{1}' without changes", _specName, @event.Resource.GlobalName);
             }
         }
 
         private void OnError(Exception exception)
         {
-            _logger.LogError(exception, $"Error occured during watch for custom resource of type {typeof(TSpec).Name}. Resubscribing...");
+            _logger.LogError(exception, $"Error occured during watch for custom resource of type {_specName}. Resubscribing...");
             if (exception is HttpRequestException<StatusV1> requestException)
             {
                 HandleSubscriptionStatusException(requestException);
@@ -119,18 +121,18 @@ namespace Contrib.KubeClient.CustomResources
             if (exception.StatusCode == HttpStatusCode.Gone)
             {
                 _resources.Clear();
-                _logger.LogDebug($"Cleaned resource cache for '{typeof(TSpec).Name}' as the last seen resource version ({_lastSeenResourceVersion}) is gone.");
+                _logger.LogDebug("Cleaned resource cache for '{0}' as the last seen resource version ({1}) is gone.", _specName, _lastSeenResourceVersion);
                 _lastSeenResourceVersion = resourceVersionNone;
             }
             else
             {
-                _logger.LogWarning($"Got an error from Kube API for resource '{typeof(TSpec).Name}': {exception.Response.Message}");
+                _logger.LogWarning(exception, $"Got an error from Kube API for resource '{_specName}': {exception.Response.Message}");
             }
         }
 
         private void OnCompleted()
         {
-            _logger.LogDebug($"Connection closed by Kube API during watch for custom resource of type {typeof(TSpec).Name}. Resubscribing...");
+            _logger.LogDebug("Connection closed by Kube API during watch for custom resource of type {0}. Resubscribing...", _specName);
             OnConnectionError?.Invoke(this, new OperationCanceledException());
             Thread.Sleep(1000);
             Subscribe();
@@ -140,7 +142,7 @@ namespace Contrib.KubeClient.CustomResources
         {
             _subscription?.Dispose();
             _subscription = null;
-            _logger.LogDebug($"Unsubscribed from {_crdPluralName}.");
+            _logger.LogDebug("Unsubscribed from {0}.", _crdPluralName);
         }
 
         public virtual void Dispose()
