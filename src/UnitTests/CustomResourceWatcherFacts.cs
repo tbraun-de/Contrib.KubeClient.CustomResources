@@ -116,7 +116,7 @@ namespace Contrib.KubeClient.CustomResources
         public void PassesLastResourceVersionOnReconnect()
         {
             _watcher.StartWatching();
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, name: "4711", resourceVersion: "35"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "4711", resourceVersion: "35"));
 
             _resourceSubject.OnError(new Exception());
 
@@ -127,7 +127,7 @@ namespace Contrib.KubeClient.CustomResources
         public void DropsCacheWhenResourceIsGone()
         {
             _watcher.StartWatching();
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, name: "4711", resourceVersion: "35"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "4711", resourceVersion: "35"));
 
             _resourceSubject.OnError(new HttpRequestException<StatusV1>(HttpStatusCode.Gone, new StatusV1()));
 
@@ -139,9 +139,9 @@ namespace Contrib.KubeClient.CustomResources
         {
             _watcher.StartWatching();
 
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, name: "resource", resourceVersion: "10"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, name: "resource", resourceVersion: "12"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, name: "resource", resourceVersion: "11"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "resource", resourceVersion: "10"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "resource", resourceVersion: "12"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "resource", resourceVersion: "11"));
 
             _watcher.RawResources.First().Metadata.ResourceVersion.Should().Be("12");
         }
@@ -151,15 +151,15 @@ namespace Contrib.KubeClient.CustomResources
         {
             _watcher.StartWatching();
 
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, name: "resource", resourceVersion: "10"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, name: "resource", resourceVersion: "12"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, name: "anotherResource", resourceVersion: "9"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "resource", resourceVersion: "10"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "resource", resourceVersion: "12"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "anotherResource", resourceVersion: "9"));
 
-            _watcher.RawResources.Single(r => r.Metadata.Name == "resource").Metadata.ResourceVersion.Should().Be("12");
-            _watcher.RawResources.Single(r => r.Metadata.Name == "anotherResource").Metadata.ResourceVersion.Should().Be("9");
+            _watcher.RawResources.Single(r => r.Metadata.Uid == "resource").Metadata.ResourceVersion.Should().Be("12");
+            _watcher.RawResources.Single(r => r.Metadata.Uid == "anotherResource").Metadata.ResourceVersion.Should().Be("9");
         }
 
-        private static ResourceEventV1<CustomResource<Client>> CreateResourceEvent(ResourceEventType eventType, string name, string resourceVersion)
+        private static ResourceEventV1<CustomResource<Client>> CreateResourceEvent(ResourceEventType eventType, string uid, string resourceVersion)
             => new ResourceEventV1<CustomResource<Client>>
             {
                 EventType = eventType,
@@ -168,11 +168,11 @@ namespace Contrib.KubeClient.CustomResources
                     Metadata = new ObjectMetaV1
                     {
                         Namespace = "namespace",
-                        Name = name,
+                        Name = uid,
                         ResourceVersion = resourceVersion,
-                        Uid = name
+                        Uid = uid
                     },
-                    Spec = new Client {ClientId = name}
+                    Spec = new Client {ClientId = uid}
                 }
             };
 

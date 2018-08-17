@@ -84,24 +84,24 @@ namespace Contrib.KubeClient.CustomResources
 
         private void DeleteResource(IResourceEventV1<CustomResource<TSpec>> @event)
         {
-            if (_resources.ContainsKey(@event.Resource.GlobalName))
+            if (_resources.ContainsKey(@event.Resource.Metadata.Uid))
             {
-                _resources.Remove(@event.Resource.GlobalName);
+                _resources.Remove(@event.Resource.Metadata.Uid);
                 _logger.LogDebug("Removed resource '{0}' with name '{1}'", _specName, @event.Resource.GlobalName);
             }
         }
 
         private void UpsertResource(IResourceEventV1<CustomResource<TSpec>> @event)
         {
-            if (_resources.ContainsKey(@event.Resource.GlobalName)
-             && !_resources[@event.Resource.GlobalName].Metadata.ResourceVersion.Equals(@event.Resource.Metadata.ResourceVersion))
+            if (_resources.ContainsKey(@event.Resource.Metadata.Uid)
+             && !_resources[@event.Resource.Metadata.Uid].Metadata.ResourceVersion.Equals(@event.Resource.Metadata.ResourceVersion))
             {
-                _resources[@event.Resource.GlobalName] = @event.Resource;
+                _resources[@event.Resource.Metadata.Uid] = @event.Resource;
                 _logger.LogDebug("Modified resource '{0}' with name '{1}'", _specName, @event.Resource.GlobalName);
             }
-            else if (!_resources.ContainsKey(@event.Resource.GlobalName))
+            else if (!_resources.ContainsKey(@event.Resource.Metadata.Uid))
             {
-                _resources.Add(@event.Resource.GlobalName, @event.Resource);
+                _resources.Add(@event.Resource.Metadata.Uid, @event.Resource);
                 _logger.LogDebug("Added resource '{0}' with name '{1}'", _specName, @event.Resource.GlobalName);
             }
             else
