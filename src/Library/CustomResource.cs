@@ -13,13 +13,8 @@ namespace Contrib.KubeClient.CustomResources
         public StatusV1 Status { get; set; }
 
         public string GlobalName
-        {
-            get
-            {
-                return string.IsNullOrWhiteSpace(Metadata.Namespace)
-                           ? $"[cluster].{Metadata.Name}"
-                           : $"{Metadata.Namespace}.{Metadata.Name}";
-            }
-        }
+            => string.IsNullOrWhiteSpace(Metadata.Namespace)
+                   ? $"[cluster].{Metadata.Name}"
+                   : $"{Metadata.Namespace}.{Metadata.Name}";
     }
 }
