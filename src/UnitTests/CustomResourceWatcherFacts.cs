@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Reactive.Subjects;
 using FluentAssertions;
@@ -31,7 +32,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void AddedResourceGetsAddedToCache()
         {
-            var expectedResource = CreateResourceEvent(ResourceEventType.Added, "expectedClientId");
+            var expectedResource = CreateResourceEvent(ResourceEventType.Added, "expectedClientId", resourceVersion: "1");
 
             _resourceSubject.OnNext(expectedResource);
 
@@ -56,8 +57,8 @@ namespace Contrib.KubeClient.CustomResources
         {
             var watcherResources = _watcher.Resources;
 
-            var addedResource = CreateResourceEvent(ResourceEventType.Added, "expectedClientId");
-            var removedResource = CreateResourceEvent(ResourceEventType.Deleted, "expectedClientId");
+            var addedResource = CreateResourceEvent(ResourceEventType.Added, "expectedClientId", resourceVersion: "1");
+            var removedResource = CreateResourceEvent(ResourceEventType.Deleted, "expectedClientId", resourceVersion: "2");
             _resourceSubject.OnNext(addedResource);
             _resourceSubject.OnNext(removedResource);
 
@@ -133,7 +134,19 @@ namespace Contrib.KubeClient.CustomResources
             _watcher.Resources.Should().BeEmpty();
         }
 
-        private static ResourceEventV1<CustomResource<Client>> CreateResourceEvent(ResourceEventType eventType, string clientId, string resourceVersion = "1")
+        [Fact, ]
+        public void DropsResourceEventIfOlderThanLastKnown()
+        {
+            _watcher.StartWatching();
+
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, clientId: "first", resourceVersion: "10"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, clientId: "latest", resourceVersion: "12"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, clientId: "second", resourceVersion: "11"));
+
+            _watcher.Resources.First().ClientId.Should().Be("latest");
+        }
+
+        private static ResourceEventV1<CustomResource<Client>> CreateResourceEvent(ResourceEventType eventType, string clientId, string resourceVersion)
             => new ResourceEventV1<CustomResource<Client>>
             {
                 EventType = eventType,

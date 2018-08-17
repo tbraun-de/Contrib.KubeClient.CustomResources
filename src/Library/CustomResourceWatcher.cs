@@ -12,7 +12,7 @@ namespace Contrib.KubeClient.CustomResources
 {
     public abstract class CustomResourceWatcher<TSpec> : ICustomResourceWatcher<TSpec>, IDisposable
     {
-        private const string resourceVersionNone = "0";
+        private const long resourceVersionNone = 0;
         private readonly Dictionary<string, CustomResource<TSpec>> _resources = new Dictionary<string, CustomResource<TSpec>>();
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly ILogger _logger;
@@ -21,7 +21,7 @@ namespace Contrib.KubeClient.CustomResources
         private readonly string _crdPluralName;
         private readonly string _namespace;
         private IDisposable _subscription;
-        private string _lastSeenResourceVersion = resourceVersionNone;
+        private long _lastSeenResourceVersion = resourceVersionNone;
         private string _specName;
 
         protected CustomResourceWatcher(ILogger logger, ICustomResourceClient client, string apiGroup, string crdPluralName, string @namespace)
@@ -51,14 +51,20 @@ namespace Contrib.KubeClient.CustomResources
                 return;
 
             DisposeSubscriptions();
-            _subscription = _client.Watch<TSpec>(_apiGroup, _crdPluralName, _namespace, _lastSeenResourceVersion).Subscribe(OnNext, OnError, OnCompleted);
+            _subscription = _client.Watch<TSpec>(_apiGroup, _crdPluralName, _namespace, _lastSeenResourceVersion.ToString()).Subscribe(OnNext, OnError, OnCompleted);
             OnConnected?.Invoke(this, EventArgs.Empty);
             _logger.LogInformation($"Subscribed to {_crdPluralName}.");
         }
 
         private void OnNext(IResourceEventV1<CustomResource<TSpec>> @event)
         {
-            _lastSeenResourceVersion = @event.Resource.Metadata.ResourceVersion;
+            if (!TryValidateResourceVersion(@event.Resource.Metadata.ResourceVersion, out long resourceVersion))
+            {
+                _logger.LogTrace("Got outdated resource version '{0}' for '{1}' with name '{2}'", @event.Resource.Metadata.ResourceVersion, _specName, @event.Resource.GlobalName);
+                return;
+            }
+
+            _lastSeenResourceVersion = resourceVersion;
             switch (@event.EventType)
             {
                 case ResourceEventType.Added:
@@ -144,6 +150,10 @@ namespace Contrib.KubeClient.CustomResources
             _subscription = null;
             _logger.LogDebug("Unsubscribed from {0}.", _crdPluralName);
         }
+
+        private bool TryValidateResourceVersion(string resourceVersion, out long parsedResourcedVersion)
+            => long.TryParse(resourceVersion, out parsedResourcedVersion)
+            && parsedResourcedVersion > _lastSeenResourceVersion;
 
         public virtual void Dispose()
         {
