@@ -116,7 +116,7 @@ namespace Contrib.KubeClient.CustomResources
         public void PassesLastResourceVersionOnReconnect()
         {
             _watcher.StartWatching();
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, clientId: "4711", resourceVersion: "35"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, name: "4711", resourceVersion: "35"));
 
             _resourceSubject.OnError(new Exception());
 
@@ -127,26 +127,39 @@ namespace Contrib.KubeClient.CustomResources
         public void DropsCacheWhenResourceIsGone()
         {
             _watcher.StartWatching();
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, clientId: "4711", resourceVersion: "35"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, name: "4711", resourceVersion: "35"));
 
             _resourceSubject.OnError(new HttpRequestException<StatusV1>(HttpStatusCode.Gone, new StatusV1()));
 
             _watcher.Resources.Should().BeEmpty();
         }
 
-        [Fact, ]
+        [Fact]
         public void DropsResourceEventIfOlderThanLastKnown()
         {
             _watcher.StartWatching();
 
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, clientId: "first", resourceVersion: "10"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, clientId: "latest", resourceVersion: "12"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, clientId: "second", resourceVersion: "11"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, name: "resource", resourceVersion: "10"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, name: "resource", resourceVersion: "12"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, name: "resource", resourceVersion: "11"));
 
-            _watcher.Resources.First().ClientId.Should().Be("latest");
+            _watcher.RawResources.First().Metadata.ResourceVersion.Should().Be("12");
         }
 
-        private static ResourceEventV1<CustomResource<Client>> CreateResourceEvent(ResourceEventType eventType, string clientId, string resourceVersion)
+        [Fact]
+        public void DoesNotDropResourceEventIfVersionIsSmallerButDifferentResource()
+        {
+            _watcher.StartWatching();
+
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, name: "resource", resourceVersion: "10"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, name: "resource", resourceVersion: "12"));
+            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, name: "anotherResource", resourceVersion: "9"));
+
+            _watcher.RawResources.Single(r => r.Metadata.Name == "resource").Metadata.ResourceVersion.Should().Be("12");
+            _watcher.RawResources.Single(r => r.Metadata.Name == "anotherResource").Metadata.ResourceVersion.Should().Be("9");
+        }
+
+        private static ResourceEventV1<CustomResource<Client>> CreateResourceEvent(ResourceEventType eventType, string name, string resourceVersion)
             => new ResourceEventV1<CustomResource<Client>>
             {
                 EventType = eventType,
@@ -155,10 +168,11 @@ namespace Contrib.KubeClient.CustomResources
                     Metadata = new ObjectMetaV1
                     {
                         Namespace = "namespace",
-                        Name = "identityclient",
-                        ResourceVersion = resourceVersion
+                        Name = name,
+                        ResourceVersion = resourceVersion,
+                        Uid = name
                     },
-                    Spec = new Client {ClientId = clientId}
+                    Spec = new Client {ClientId = name}
                 }
             };
 

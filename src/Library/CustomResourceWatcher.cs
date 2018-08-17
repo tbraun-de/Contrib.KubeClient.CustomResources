@@ -58,7 +58,7 @@ namespace Contrib.KubeClient.CustomResources
 
         private void OnNext(IResourceEventV1<CustomResource<TSpec>> @event)
         {
-            if (!TryValidateResourceVersion(@event.Resource.Metadata.ResourceVersion, out long resourceVersion))
+            if (!TryValidateResource(@event.Resource, out long resourceVersion))
             {
                 _logger.LogTrace("Got outdated resource version '{0}' for '{1}' with name '{2}'", @event.Resource.Metadata.ResourceVersion, _specName, @event.Resource.GlobalName);
                 return;
@@ -151,9 +151,12 @@ namespace Contrib.KubeClient.CustomResources
             _logger.LogDebug("Unsubscribed from {0}.", _crdPluralName);
         }
 
-        private bool TryValidateResourceVersion(string resourceVersion, out long parsedResourcedVersion)
-            => long.TryParse(resourceVersion, out parsedResourcedVersion)
-            && parsedResourcedVersion > _lastSeenResourceVersion;
+        private bool TryValidateResource(CustomResource<TSpec> resource, out long parsedResourcedVersion)
+        {
+            long.TryParse(resource.Metadata.ResourceVersion, out parsedResourcedVersion);
+            var existingResource = _resources.Values.FirstOrDefault(r => r.Metadata.Uid.Equals(resource.Metadata.Uid, StringComparison.InvariantCultureIgnoreCase));
+            return existingResource == null || parsedResourcedVersion > long.Parse(existingResource.Metadata.ResourceVersion);
+        }
 
         public virtual void Dispose()
         {
