@@ -1,10 +1,12 @@
-﻿using JetBrains.Annotations;
+﻿using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 using KubeClient;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Contrib.KubeClient.CustomResources
 {
+    [ExcludeFromCodeCoverage]
     [PublicAPI]
     public class KubeApiClientFactory
     {

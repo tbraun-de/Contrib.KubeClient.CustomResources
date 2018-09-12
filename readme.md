@@ -7,7 +7,7 @@ KubeClient contribution to simplify work with CustomResources.
 
 ## Usage
 
-The CustomResources client can be injected via `Microsoft.Extensions.DependencyInjection`.
+The Kubernetes client can be injected via `Microsoft.Extensions.DependencyInjection`.
 
 ```csharp
 services
@@ -16,7 +16,7 @@ services
     .AddKubernetesClient()
 ```
 
-We furthermore provide an implementation for an `ICustomResourceStore<TResource>`.
+We furthermore provide an implementation for an `ICustomResourceStore<TResourceSpec>`.
 This is meant to be an InMemoryCollection of all sorts of CustomResources of a certain _Kind_ stored in the cluster.
 
 ```csharp
@@ -28,7 +28,7 @@ This is meant to be an InMemoryCollection of all sorts of CustomResources of a c
     }
 ```
 
-You only have to model the `spec` part of the CustomResourceDefinition and pass this class as `TResource` type argument.
+You only have to model the `spec` part of the CustomResourceDefinition and pass this class as `TResourceSpec` type argument.
 
 ```csharp
 public class Customer
@@ -39,18 +39,18 @@ public class Customer
 }
 ```
 
-As you already might have recognized, the last missing part is a `CustomResourceWatcher<TResource>` providing the actual resource.
+As you already might have recognized, the last missing part is a `CustomResourceWatcher<TResourceSpec>` providing the actual resource.
 
 ```csharp
 public class CustomerWatcher : CustomResourceWatcher<Customer>
 {
     public CustomerWatcher(ILogger<CustomerWatcher> logger, ICustomResourceClient client)
-      : base(logger, client, apiGroup: "stable.mycompany.com", crdPluralName: "customers", @namespace: string.Empty)
+      : base(logger, client, new CustomResourceDefinition<Customer>(apiVersion: "stable.mycompany.com", pluralName: "customers"), @namespace: string.Empty)
     {}
 }
 ```
 
-Make sure to set `apiGroup` and `crdPluralName` according to the values specified in the CRD you are using.
+Make sure to set `apiVersion` and `crdPluralName` according to the values specified in the CRD you are using.
 A more interesting part is the `@namespace` parameter; setting it to `string.Empty` does not filter for namespaces whereas setting a namespace only watches this exact namespace.
 
 ### Running in or outside the K8s cluster

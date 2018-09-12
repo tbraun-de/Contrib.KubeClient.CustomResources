@@ -5,16 +5,22 @@ using JetBrains.Annotations;
 namespace Contrib.KubeClient.CustomResources
 {
     [PublicAPI]
-    public interface ICustomResourceWatcher<TSpec>
+    public interface ICustomResourceWatcher<TResourceSpec>
     {
         /// <summary>
-        /// Gets all <typeparamref name="TSpec"/>s which are currently active.
+        /// Gets all <typeparamref name="TResourceSpec"/>s which are currently active.
         /// </summary>
-        IEnumerable<TSpec> Resources { get; }
+        IEnumerable<TResourceSpec> Resources { get; }
+
         /// <summary>
         /// Gets all CustomResources which are currently active.
         /// </summary>
-        IEnumerable<CustomResource<TSpec>> RawResources { get; }
+        IEnumerable<CustomResource<TResourceSpec>> RawResources { get; }
+
+        /// <summary>
+        /// The used custom resource client.
+        /// </summary>
+        ICustomResourceClient<TResourceSpec> Client { get; }
 
         /// <summary>
         /// Starts watching for CustomResources.
@@ -24,11 +30,11 @@ namespace Contrib.KubeClient.CustomResources
         /// <summary>
         /// Triggered whenever the connection to the KubeApi is closed.
         /// </summary>
-        event EventHandler<Exception> OnConnectionError;
+        event EventHandler<Exception> ConnectionError;
 
         /// <summary>
         /// Triggered whenever the connection to the KubeApi is (re)established.
         /// </summary>
-        event EventHandler OnConnected;
+        event EventHandler Connected;
     }
 }

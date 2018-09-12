@@ -1,43 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using JetBrains.Annotations;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    /// <summary>
-    /// A storage for custom resources.
-    /// </summary>
-    [PublicAPI]
-    public interface ICustomResourceStore<TResource>
+    public interface ICustomResourceStore<TResourceSpec> : ICustomResourceReadonlyStore<TResourceSpec>
     {
         /// <summary>
-        /// Gets all resources.
+        /// Adds the given <paramref name="resource"/> in the kube api.
         /// </summary>
-        /// <returns></returns>
-        Task<IEnumerable<CustomResource<TResource>>> GetAllAsync();
+        Task<CustomResource<TResourceSpec>> AddAsync(CustomResource<TResourceSpec> resource);
 
         /// <summary>
-        /// Finds a resource by its metadata.name property.
+        /// Updates an existing resource given by <paramref name="resource"/>.
         /// </summary>
-        /// <exception cref="KeyNotFoundException">No element in the store has the given <paramref name="name"/></exception>
-        Task<CustomResource<TResource>> FindByNameAsync([NotNull] string name);
+        /// <param name="resource">The resource to overwrite.</param>
+        /// <returns>A <see cref="CustomResource{TResourceSpec}"/> representing the current state for the updated resource.</returns>
+        Task<CustomResource<TResourceSpec>> UpdateAsync(CustomResource<TResourceSpec> resource);
 
         /// <summary>
-        /// Finds all resources by its metadata.name property.
+        /// Deletes an existing resource given by <paramref name="resourceName"/>.
         /// </summary>
-        /// <returns>empty enumerable if nothing found</returns>
-        Task<IEnumerable<CustomResource<TResource>>> FindByNamespaceAsync([NotNull] string @namespace);
-
-        /// <summary>
-        /// Finds all resources by the given query.
-        /// </summary>
-        /// <returns>empty enumerable if nothing found</returns>
-        Task<IEnumerable<CustomResource<TResource>>> FindAsync([NotNull] Func<CustomResource<TResource>, bool> query);
-
-        /// <summary>
-        /// Counts all stored resources
-        /// </summary>
-        Task<long> CountAsync();
+        /// <param name="resourceName">The name of the target resource to delete.</param>
+        /// <param name="namespace">The namespace the resource is located in.</param>
+        /// <returns>A <see cref="CustomResource{TResourceSpec}"/> representing the resource`s most recent state before it was deleted.</returns>
+        Task<CustomResource<TResourceSpec>> DeleteAsync(string resourceName, string @namespace = null);
     }
 }

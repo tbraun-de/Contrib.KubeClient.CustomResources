@@ -6,9 +6,9 @@ namespace Contrib.KubeClient.CustomResources
 {
     [ExcludeFromCodeCoverage]
     [PublicAPI]
-    public class CustomResource<TSpec> : KubeResourceV1
+    public class CustomResource<TResourceSpec> : KubeResourceV1
     {
-        public TSpec Spec { get; set; }
+        public TResourceSpec Spec { get; set; }
 
         public StatusV1 Status { get; set; }
 

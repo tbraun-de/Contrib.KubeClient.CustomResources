@@ -10,6 +10,7 @@
     <IncludeSource>True</IncludeSource>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <LangVersion>7.3</LangVersion>
   </PropertyGroup>
   <PropertyGroup>
     <Authors>AXOOM GmbH</Authors>
@@ -19,6 +20,6 @@
     <PackageReference Include="IdentityServer4" Version="2.2.0" />
     <PackageReference Include="KubeClient" Version="2.1.5" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
-    <PackageReference Include="JetBrains.Annotations" Version="11.1.0" />
+    <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" />
   </ItemGroup>
 </Project>

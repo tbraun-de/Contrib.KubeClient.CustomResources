@@ -1,14 +1,16 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 
 namespace Contrib.KubeClient.CustomResources
 {
+    [ExcludeFromCodeCoverage]
     [PublicAPI]
     public class KubernetesConfigurationStoreOptions
     {
         /// <summary>
         /// The connection string which points to the Kubernetes cluster.
-        /// If not set, the service assumes that it runs inside the kubernetes cluster and autoconfigures itself.
+        /// If not set, the service assumes that it runs inside the kubernetes cluster and auto-configures itself.
         /// </summary>
         public string ConnectionString { get; set; }
 

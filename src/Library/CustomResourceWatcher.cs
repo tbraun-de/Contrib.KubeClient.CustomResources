@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -10,34 +11,33 @@ using Microsoft.Extensions.Logging;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    public abstract class CustomResourceWatcher<TSpec> : ICustomResourceWatcher<TSpec>, IDisposable
+    public abstract class CustomResourceWatcher<TResourceSpec> : ICustomResourceWatcher<TResourceSpec>, IDisposable
     {
         private const long resourceVersionNone = 0;
-        private readonly Dictionary<string, CustomResource<TSpec>> _resources = new Dictionary<string, CustomResource<TSpec>>();
+        private readonly Dictionary<string, CustomResource<TResourceSpec>> _resources = new Dictionary<string, CustomResource<TResourceSpec>>();
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly ILogger _logger;
-        private readonly ICustomResourceClient _client;
-        private readonly string _apiGroup;
-        private readonly string _crdPluralName;
+        private readonly CustomResourceDefinition<TResourceSpec> _crd;
         private readonly string _namespace;
         private IDisposable _subscription;
         private long _lastSeenResourceVersion = resourceVersionNone;
         private string _specName;
 
-        protected CustomResourceWatcher(ILogger logger, ICustomResourceClient client, string apiGroup, string crdPluralName, string @namespace)
+        protected CustomResourceWatcher(ILogger logger, ICustomResourceClient<TResourceSpec> client, CustomResourceDefinition<TResourceSpec> crd, string @namespace)
         {
             _logger = logger;
-            _client = client;
-            _apiGroup = apiGroup;
-            _crdPluralName = crdPluralName;
+            _crd = crd;
             _namespace = @namespace;
-            _specName = typeof(TSpec).Name;
+            _specName = typeof(TResourceSpec).Name;
+            Client = client;
         }
 
-        public IEnumerable<TSpec> Resources => new ResourceMemento(_resources);
-        public IEnumerable<CustomResource<TSpec>> RawResources => new RawResourceMemento(_resources);
-        public event EventHandler<Exception> OnConnectionError;
-        public event EventHandler OnConnected;
+        public ICustomResourceClient<TResourceSpec> Client { get; private set; }
+        public IEnumerable<TResourceSpec> Resources => new ResourceMemento(_resources);
+        public IEnumerable<CustomResource<TResourceSpec>> RawResources => new RawResourceMemento(_resources);
+        public event EventHandler<Exception> ConnectionError;
+        public event EventHandler Connected;
+        public event EventHandler DataChanged;
 
         public void StartWatching()
         {
@@ -51,12 +51,12 @@ namespace Contrib.KubeClient.CustomResources
                 return;
 
             DisposeSubscriptions();
-            _subscription = _client.Watch<TSpec>(_apiGroup, _crdPluralName, _namespace, _lastSeenResourceVersion.ToString()).Subscribe(OnNext, OnError, OnCompleted);
-            OnConnected?.Invoke(this, EventArgs.Empty);
-            _logger.LogInformation($"Subscribed to {_crdPluralName}.");
+            _subscription = Client.Watch(_namespace, _lastSeenResourceVersion.ToString()).Subscribe(OnNext, OnError, OnCompleted);
+            Connected?.Invoke(this, EventArgs.Empty);
+            _logger.LogInformation($"Subscribed to {_crd.PluralName}.");
         }
 
-        private void OnNext(IResourceEventV1<CustomResource<TSpec>> @event)
+        private void OnNext(IResourceEventV1<CustomResource<TResourceSpec>> @event)
         {
             if (!TryValidateResource(@event.Resource, out long resourceVersion))
             {
@@ -75,33 +75,35 @@ namespace Contrib.KubeClient.CustomResources
                     DeleteResource(@event);
                     break;
                 case ResourceEventType.Error:
-                    _logger.LogWarning($"Got erroneous resource '{typeof(TSpec).Name}' with name {@event.Resource.GlobalName}: {@event.Resource.Status.Message}");
+                    _logger.LogWarning($"Got erroneous resource '{typeof(TResourceSpec).Name}' with name {@event.Resource.GlobalName}: {@event.Resource.Status?.Message}");
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        private void DeleteResource(IResourceEventV1<CustomResource<TSpec>> @event)
+        private void DeleteResource(IResourceEventV1<CustomResource<TResourceSpec>> @event)
         {
-            if (_resources.ContainsKey(@event.Resource.Metadata.Uid))
+            if (_resources.Remove(@event.Resource.Metadata.Uid))
             {
-                _resources.Remove(@event.Resource.Metadata.Uid);
+                OnDataChanged();
                 _logger.LogDebug("Removed resource '{0}' with name '{1}'", _specName, @event.Resource.GlobalName);
             }
         }
 
-        private void UpsertResource(IResourceEventV1<CustomResource<TSpec>> @event)
+        private void UpsertResource(IResourceEventV1<CustomResource<TResourceSpec>> @event)
         {
             if (_resources.ContainsKey(@event.Resource.Metadata.Uid)
              && !_resources[@event.Resource.Metadata.Uid].Metadata.ResourceVersion.Equals(@event.Resource.Metadata.ResourceVersion))
             {
                 _resources[@event.Resource.Metadata.Uid] = @event.Resource;
+                OnDataChanged();
                 _logger.LogDebug("Modified resource '{0}' with name '{1}'", _specName, @event.Resource.GlobalName);
             }
             else if (!_resources.ContainsKey(@event.Resource.Metadata.Uid))
             {
                 _resources.Add(@event.Resource.Metadata.Uid, @event.Resource);
+                OnDataChanged();
                 _logger.LogDebug("Added resource '{0}' with name '{1}'", _specName, @event.Resource.GlobalName);
             }
             else
@@ -117,16 +119,27 @@ namespace Contrib.KubeClient.CustomResources
             {
                 HandleSubscriptionStatusException(requestException);
             }
-            OnConnectionError?.Invoke(this, exception);
+            ConnectionError?.Invoke(this, exception);
             Thread.Sleep(1000);
             Subscribe();
         }
+
+        private void OnCompleted()
+        {
+            _logger.LogDebug("Connection closed by Kube API during watch for custom resource of type {0}. Resubscribing...", _specName);
+            ConnectionError?.Invoke(this, new OperationCanceledException());
+            Thread.Sleep(1000);
+            Subscribe();
+        }
+
+        private void OnDataChanged() => DataChanged?.Invoke(this, new EventArgs());
 
         private void HandleSubscriptionStatusException(HttpRequestException<StatusV1> exception)
         {
             if (exception.StatusCode == HttpStatusCode.Gone)
             {
                 _resources.Clear();
+                OnDataChanged();
                 _logger.LogDebug("Cleaned resource cache for '{0}' as the last seen resource version ({1}) is gone.", _specName, _lastSeenResourceVersion);
                 _lastSeenResourceVersion = resourceVersionNone;
             }
@@ -136,22 +149,14 @@ namespace Contrib.KubeClient.CustomResources
             }
         }
 
-        private void OnCompleted()
-        {
-            _logger.LogDebug("Connection closed by Kube API during watch for custom resource of type {0}. Resubscribing...", _specName);
-            OnConnectionError?.Invoke(this, new OperationCanceledException());
-            Thread.Sleep(1000);
-            Subscribe();
-        }
-
         private void DisposeSubscriptions()
         {
             _subscription?.Dispose();
             _subscription = null;
-            _logger.LogDebug("Unsubscribed from {0}.", _crdPluralName);
+            _logger.LogDebug("Unsubscribed from {0}.", _crd.PluralName);
         }
 
-        private bool TryValidateResource(CustomResource<TSpec> resource, out long parsedResourcedVersion)
+        private bool TryValidateResource(CustomResource<TResourceSpec> resource, out long parsedResourcedVersion)
         {
             long.TryParse(resource.Metadata.ResourceVersion, out parsedResourcedVersion);
             var existingResource = _resources.Values.FirstOrDefault(r => r.Metadata.Uid.Equals(resource.Metadata.Uid, StringComparison.InvariantCultureIgnoreCase));
@@ -164,24 +169,26 @@ namespace Contrib.KubeClient.CustomResources
             DisposeSubscriptions();
         }
 
-        private class ResourceMemento : IEnumerable<TSpec>
+        [ExcludeFromCodeCoverage]
+        private class ResourceMemento : IEnumerable<TResourceSpec>
         {
-            private readonly Dictionary<string, CustomResource<TSpec>> _toIterate;
+            private readonly Dictionary<string, CustomResource<TResourceSpec>> _toIterate;
 
-            public ResourceMemento(Dictionary<string, CustomResource<TSpec>> toIterate) => _toIterate = toIterate;
+            public ResourceMemento(Dictionary<string, CustomResource<TResourceSpec>> toIterate) => _toIterate = toIterate;
 
-            public IEnumerator<TSpec> GetEnumerator() => _toIterate.Values.Select(v => v.Spec).GetEnumerator();
+            public IEnumerator<TResourceSpec> GetEnumerator() => _toIterate.Values.Select(v => v.Spec).GetEnumerator();
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
 
-        private class RawResourceMemento : IEnumerable<CustomResource<TSpec>>
+        [ExcludeFromCodeCoverage]
+        private class RawResourceMemento : IEnumerable<CustomResource<TResourceSpec>>
         {
-            private readonly Dictionary<string, CustomResource<TSpec>> _toIterate;
+            private readonly Dictionary<string, CustomResource<TResourceSpec>> _toIterate;
 
-            public RawResourceMemento(Dictionary<string, CustomResource<TSpec>> toIterate) => _toIterate = toIterate;
+            public RawResourceMemento(Dictionary<string, CustomResource<TResourceSpec>> toIterate) => _toIterate = toIterate;
 
-            public IEnumerator<CustomResource<TSpec>> GetEnumerator() => _toIterate.Values.GetEnumerator();
+            public IEnumerator<CustomResource<TResourceSpec>> GetEnumerator() => _toIterate.Values.GetEnumerator();
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
         }
