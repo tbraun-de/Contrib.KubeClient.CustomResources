@@ -21,16 +21,15 @@ namespace Contrib.KubeClient.CustomResources
         }
 
         /// <summary>
-        /// Registers a <see cref="ICustomResourceStore{TResourceSpec}"/>, <see cref="ICustomResourceClient{TResourceSpec}"/>, <see cref="ICustomResourceWatcher{TResourceSpec}"/> and a <see cref="CustomResourceDefinition{TResourceSpec}"/>.
+        /// Registers a <see cref="ICustomResourceWatcher{TResourceSpec}"/>, <see cref="ICustomResourceClient{TResourceSpec}"/> and a <see cref="CustomResourceDefinition{TResourceSpec}"/>.
         /// </summary>
-        /// <param name="services"></param>
+        /// <param name="services">The service collection.</param>
         /// <param name="crdApiVersion">The crd API Version (&lt;apiGroupName&gt;/&lt;version&gt;, e.g. 'your.company/v1').</param>
         /// <param name="crdPluralName">The plural name (see <code>spec.names.plural</code>) of the CRD.</param>
-        public static IServiceCollection AddCustomResourceStore<TResourceSpec>(this IServiceCollection services, string crdApiVersion, string crdPluralName)
+        public static IServiceCollection AddCustomResourceWatcher<TResourceSpec>(this IServiceCollection services, string crdApiVersion, string crdPluralName)
             => services.AddKubernetesClient()
                        .AddSingleton(new CustomResourceDefinition<TResourceSpec>(crdApiVersion, crdPluralName))
                        .AddSingleton<ICustomResourceClient<TResourceSpec>, CustomResourceClient<TResourceSpec>>()
-                       .AddSingleton<ICustomResourceWatcher<TResourceSpec>, CustomResourceWatcher<TResourceSpec>>()
-                       .AddSingleton<ICustomResourceStore<TResourceSpec>, CustomResourceStore<TResourceSpec>>();
+                       .AddSingleton<ICustomResourceWatcher<TResourceSpec>, CustomResourceWatcher<TResourceSpec>>();
     }
 }

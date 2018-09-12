@@ -8,6 +8,21 @@ namespace Contrib.KubeClient.CustomResources
     public interface ICustomResourceWatcher<TResourceSpec>
     {
         /// <summary>
+        /// Triggered whenever the connection to the KubeApi is closed.
+        /// </summary>
+        event EventHandler<Exception> ConnectionError;
+
+        /// <summary>
+        /// Triggered whenever the connection to the KubeApi is (re)established.
+        /// </summary>
+        event EventHandler Connected;
+
+        /// <summary>
+        /// Triggered whenever resources have changed.
+        /// </summary>
+        event EventHandler DataChanged;
+
+        /// <summary>
         /// Gets all <typeparamref name="TResourceSpec"/>s which are currently active.
         /// </summary>
         IEnumerable<TResourceSpec> Resources { get; }
@@ -26,15 +41,5 @@ namespace Contrib.KubeClient.CustomResources
         /// Starts watching for CustomResources.
         /// </summary>
         void StartWatching();
-
-        /// <summary>
-        /// Triggered whenever the connection to the KubeApi is closed.
-        /// </summary>
-        event EventHandler<Exception> ConnectionError;
-
-        /// <summary>
-        /// Triggered whenever the connection to the KubeApi is (re)established.
-        /// </summary>
-        event EventHandler Connected;
     }
 }

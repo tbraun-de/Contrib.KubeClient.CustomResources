@@ -9,13 +9,13 @@ using Xunit;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    public class CustomResourceStoreFacts
+    public class CustomResourceWatcherExtensionsFacts
     {
         private readonly Mock<ICustomResourceWatcher<string>> _watcherMock;
-        private readonly CustomResourceStore<string> _store;
         private readonly Mock<ICustomResourceClient<string>> _customResourceClientMock;
+        private ICustomResourceWatcher<string> _watcher;
 
-        public CustomResourceStoreFacts()
+        public CustomResourceWatcherExtensionsFacts()
         {
             _customResourceClientMock = new Mock<ICustomResourceClient<string>>();
             _customResourceClientMock.Setup(mock => mock.CreateAsync(It.IsAny<CustomResource<string>>(), It.IsAny<CancellationToken>()))
@@ -31,8 +31,7 @@ namespace Contrib.KubeClient.CustomResources
 
             _watcherMock = new Mock<ICustomResourceWatcher<string>>();
             _watcherMock.SetupGet(mock => mock.Client).Returns(_customResourceClientMock.Object);
-
-            _store = new CustomResourceStore<string>(_watcherMock.Object);
+            _watcher = _watcherMock.Object;
         }
 
         [Fact]
@@ -47,7 +46,7 @@ namespace Contrib.KubeClient.CustomResources
             };
             _watcherMock.SetupGet(expression: mock => mock.RawResources).Returns(resources);
 
-            var resourceFound = await _store.FindByNameAsync("123");
+            var resourceFound = await _watcher.FindByNameAsync("123");
 
             resourceFound.Should().Be(resources.Single(x => x.Metadata.Name == "123"));
         }
@@ -69,7 +68,7 @@ namespace Contrib.KubeClient.CustomResources
             resources.AddRange(expectedResources);
             _watcherMock.SetupGet(expression: mock => mock.RawResources).Returns(resources);
 
-            var resourcesFound = await _store.FindByNamespaceAsync("123");
+            var resourcesFound = await _watcher.FindByNamespaceAsync("123");
 
             resourcesFound.Should().BeEquivalentTo(expectedResources);
         }
@@ -91,7 +90,7 @@ namespace Contrib.KubeClient.CustomResources
             resources.AddRange(expectedResources);
             _watcherMock.SetupGet(expression: mock => mock.RawResources).Returns(resources);
 
-            var resourcesFound = await _store.FindAsync(r => r.Spec == "test12134");
+            var resourcesFound = await _watcher.FindAsync(r => r.Spec == "test12134");
 
             resourcesFound.Should().BeEquivalentTo(expectedResources);
         }
@@ -108,7 +107,7 @@ namespace Contrib.KubeClient.CustomResources
             };
             _watcherMock.SetupGet(expression: mock => mock.RawResources).Returns(resources);
 
-            var resourcesFound = await _store.FindAsync(r => r.Spec == "not_in_there");
+            var resourcesFound = await _watcher.FindAsync(r => r.Spec == "not_in_there");
 
             resourcesFound.Should().BeEmpty();
         }
@@ -123,12 +122,9 @@ namespace Contrib.KubeClient.CustomResources
                 CustomResourceFactory.Create(spec: "test123", name: "345"),
                 CustomResourceFactory.Create(spec: "test123", name: "456")
             };
-            var watcherMock = new Mock<ICustomResourceWatcher<string>>();
-            watcherMock.SetupGet(expression: mock => mock.RawResources).Returns(resources);
+            _watcherMock.SetupGet(expression: mock => mock.RawResources).Returns(resources);
 
-            var store = new CustomResourceReadonlyStore<string>(watcher: watcherMock.Object);
-
-            Func<Task> find = async () => await store.FindByNameAsync("not_in_there");
+            Func<Task> find = async () => await _watcher.FindByNameAsync("not_in_there");
             find.Should().Throw<KeyNotFoundException>();
         }
 
@@ -142,7 +138,7 @@ namespace Contrib.KubeClient.CustomResources
             };
             _watcherMock.SetupGet(expression: mock => mock.RawResources).Returns(expectedResources);
 
-            var resourcesFound = await _store.FindAllAsync();
+            var resourcesFound = await _watcher.FindAllAsync();
 
             resourcesFound.Should().BeEquivalentTo(expectedResources);
         }
@@ -157,39 +153,9 @@ namespace Contrib.KubeClient.CustomResources
             };
             _watcherMock.SetupGet(expression: mock => mock.RawResources).Returns(resources);
 
-            long actualCount = await _store.CountAsync();
+            long actualCount = await _watcher.CountAsync();
 
             actualCount.Should().Be(resources.Count);
-        }
-
-        [Fact]
-        public async Task AddsCustomResource()
-        {
-            var resource = CustomResourceFactory.Create(spec: "test123", @namespace: "123");
-
-            var createdResource = await _store.AddAsync(resource);
-
-            createdResource.Metadata.Uid.Should().NotBeNullOrWhiteSpace();
-        }
-
-        [Fact]
-        public async Task UpdatesCustomResource()
-        {
-            var resource = CustomResourceFactory.Create(spec: "test123", @namespace: "123");
-
-            await _store.UpdateAsync(resource);
-
-            _customResourceClientMock.Verify(mock => mock.UpdateAsync(resource, It.IsAny<CancellationToken>()));
-        }
-
-        [Fact]
-        public async Task DeletesCustomResource()
-        {
-            var resource = CustomResourceFactory.Create(spec: "test123", @namespace: "resourceNamespace", name: "resourceName");
-
-            await _store.DeleteAsync(resource.Metadata.Name, resource.Metadata.Namespace);
-
-            _customResourceClientMock.Verify(mock => mock.DeleteAsync(resource.Metadata.Name, resource.Metadata.Namespace, It.IsAny<CancellationToken>()));
         }
     }
 }
