@@ -23,7 +23,7 @@ namespace Contrib.KubeClient.CustomResources
         private long _lastSeenResourceVersion = resourceVersionNone;
         private string _specName;
 
-        protected CustomResourceWatcher(ILogger logger, ICustomResourceClient<TResourceSpec> client, CustomResourceDefinition<TResourceSpec> crd, string @namespace)
+        protected CustomResourceWatcher(ILogger logger, ICustomResourceClient<TResourceSpec> client, CustomResourceDefinition<TResourceSpec> crd, string @namespace = "")
         {
             _logger = logger;
             _crd = crd;
