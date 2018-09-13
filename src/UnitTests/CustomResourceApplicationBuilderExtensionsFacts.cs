@@ -1,8 +1,11 @@
 using System.Linq;
+using System.Reactive.Subjects;
 using FluentAssertions;
+using KubeClient.Models;
 using Microsoft.AspNetCore.Builder.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Moq;
 using Xunit;
 
 namespace Contrib.KubeClient.CustomResources
@@ -18,6 +21,8 @@ namespace Contrib.KubeClient.CustomResources
             serviceCollection.AddLogging(builder => builder.AddConsole());
             serviceCollection.AddOptions();
             serviceCollection.Configure<KubernetesConfigurationStoreOptions>(opt => opt.ConnectionString = "https://nowhere");
+            serviceCollection.AddSingleton(CreateResourceClient<int>());
+            serviceCollection.AddSingleton(CreateResourceClient<string>());
             serviceCollection.AddCustomResourceWatcher<string, TestResourceWatcher<string>>(crdApiVersion: "foo/v1", crdPluralName: "strings");
             serviceCollection.AddCustomResourceWatcher<int, TestResourceWatcher<int>>(crdApiVersion: "foo/v1", crdPluralName: "integers");
             _serviceProvider = serviceCollection.BuildServiceProvider();
@@ -45,10 +50,17 @@ namespace Contrib.KubeClient.CustomResources
                             .ContainSingle(watcher => watcher.IsActive);
         }
 
+        private static ICustomResourceClient<TResourceSpec> CreateResourceClient<TResourceSpec>()
+        {
+            var clientMock = new Mock<ICustomResourceClient<TResourceSpec>>();
+            clientMock.Setup(mock => mock.Watch(It.IsAny<string>(), It.IsAny<string>())).Returns(new Subject<IResourceEventV1<CustomResource<TResourceSpec>>>());
+            return clientMock.Object;
+        }
+
         public class TestResourceWatcher<T> : CustomResourceWatcher<T>
         {
             public TestResourceWatcher(ILogger<TestResourceWatcher<T>> logger, ICustomResourceClient<T> client, CustomResourceDefinition<T> crd)
-                : base(logger, client, crd, @namespace: "")
+                : base(logger, client, crd)
             {}
         }
     }
