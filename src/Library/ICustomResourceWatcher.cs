@@ -5,7 +5,7 @@ using JetBrains.Annotations;
 namespace Contrib.KubeClient.CustomResources
 {
     [PublicAPI]
-    public interface ICustomResourceWatcher<TResourceSpec>
+    public interface ICustomResourceWatcher
     {
         /// <summary>
         /// Triggered whenever the connection to the KubeApi is closed.
@@ -23,6 +23,20 @@ namespace Contrib.KubeClient.CustomResources
         event EventHandler DataChanged;
 
         /// <summary>
+        /// Indicates whether the resource watcher is watching or not.
+        /// </summary>
+        bool IsActive { get; }
+
+        /// <summary>
+        /// Starts watching for CustomResources.
+        /// </summary>
+        void StartWatching();
+    }
+
+    [PublicAPI]
+    public interface ICustomResourceWatcher<TResourceSpec> : ICustomResourceWatcher
+    {
+        /// <summary>
         /// Gets all <typeparamref name="TResourceSpec"/>s which are currently active.
         /// </summary>
         IEnumerable<TResourceSpec> Resources { get; }
@@ -36,10 +50,5 @@ namespace Contrib.KubeClient.CustomResources
         /// The used custom resource client.
         /// </summary>
         ICustomResourceClient<TResourceSpec> Client { get; }
-
-        /// <summary>
-        /// Starts watching for CustomResources.
-        /// </summary>
-        void StartWatching();
     }
 }

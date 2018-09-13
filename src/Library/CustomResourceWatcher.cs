@@ -39,6 +39,8 @@ namespace Contrib.KubeClient.CustomResources
         public event EventHandler Connected;
         public event EventHandler DataChanged;
 
+        public bool IsActive => _subscription != null;
+
         public virtual void StartWatching()
         {
             if (_subscription == null)
