@@ -16,30 +16,8 @@ services
     .AddKubernetesClient()
 ```
 
-We furthermore provide an implementation for an `ICustomResourceStore<TResourceSpec>`.
+We furthermore provide an implementation for a `CustomResourceWatcher<TResourceSpec>` providing the actual resource.
 This is meant to be an InMemoryCollection of all sorts of CustomResources of a certain _Kind_ stored in the cluster.
-
-```csharp
- public class CustomerStore : CustomResourceStore<Customer>, ICustomerStore
-    {
-        public CustomerStore(ICustomResourceWatcher<Customer> watcher)
-            : base(watcher)
-        {}
-    }
-```
-
-You only have to model the `spec` part of the CustomResourceDefinition and pass this class as `TResourceSpec` type argument.
-
-```csharp
-public class Customer
-{
-    public string Firstname { get; set; }
-    public string Lastname { get; set; }
-    public DateTime Created { get; set; }
-}
-```
-
-As you already might have recognized, the last missing part is a `CustomResourceWatcher<TResourceSpec>` providing the actual resource.
 
 ```csharp
 public class CustomerWatcher : CustomResourceWatcher<Customer>
@@ -52,6 +30,17 @@ public class CustomerWatcher : CustomResourceWatcher<Customer>
 
 Make sure to set `apiVersion` and `crdPluralName` according to the values specified in the CRD you are using.
 A more interesting part is the `@namespace` parameter; setting it to `string.Empty` does not filter for namespaces whereas setting a namespace only watches this exact namespace.
+
+You only have to model the `spec` part of the CustomResourceDefinition and pass this class as `TResourceSpec` type argument.
+
+```csharp
+public class Customer
+{
+    public string Firstname { get; set; }
+    public string Lastname { get; set; }
+    public DateTime Created { get; set; }
+}
+```
 
 ### Running in or outside the K8s cluster
 
