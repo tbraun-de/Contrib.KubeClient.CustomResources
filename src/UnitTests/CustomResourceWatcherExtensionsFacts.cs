@@ -12,25 +12,24 @@ namespace Contrib.KubeClient.CustomResources
     public class CustomResourceWatcherExtensionsFacts
     {
         private readonly Mock<ICustomResourceWatcher<string>> _watcherMock;
-        private readonly Mock<ICustomResourceClient<string>> _customResourceClientMock;
-        private ICustomResourceWatcher<string> _watcher;
+        private readonly ICustomResourceWatcher<string> _watcher;
 
         public CustomResourceWatcherExtensionsFacts()
         {
-            _customResourceClientMock = new Mock<ICustomResourceClient<string>>();
-            _customResourceClientMock.Setup(mock => mock.CreateAsync(It.IsAny<CustomResource<string>>(), It.IsAny<CancellationToken>()))
+            var customResourceClientMock = new Mock<ICustomResourceClient<string>>();
+            customResourceClientMock.Setup(mock => mock.CreateAsync(It.IsAny<CustomResource<string>>(), It.IsAny<CancellationToken>()))
                                     .Returns<CustomResource<string>, CancellationToken>((resource, _) =>
                                      {
                                          resource.Metadata.Uid = Guid.NewGuid().ToString("N");
                                          return Task.FromResult(resource);
                                      });
-            _customResourceClientMock.Setup(mock => mock.UpdateAsync(It.IsAny<CustomResource<string>>(), It.IsAny<CancellationToken>()))
+            customResourceClientMock.Setup(mock => mock.UpdateAsync(It.IsAny<CustomResource<string>>(), It.IsAny<CancellationToken>()))
                                     .Returns<CustomResource<string>, CancellationToken>((resource, _) => Task.FromResult(resource));
-            _customResourceClientMock.Setup(mock => mock.DeleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            customResourceClientMock.Setup(mock => mock.DeleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                                     .Returns<string, string, CancellationToken>((name, @namespace, _) => Task.FromResult(CustomResourceFactory.Create("bla", name, @namespace)));
 
             _watcherMock = new Mock<ICustomResourceWatcher<string>>();
-            _watcherMock.SetupGet(mock => mock.Client).Returns(_customResourceClientMock.Object);
+            _watcherMock.SetupGet(mock => mock.Client).Returns(customResourceClientMock.Object);
             _watcher = _watcherMock.Object;
         }
 
