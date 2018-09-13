@@ -33,7 +33,7 @@ namespace Contrib.KubeClient.CustomResources
             return services.AddKubernetesClient()
                            .AddSingleton(new CustomResourceDefinition<TResourceSpec>(crdApiVersion, crdPluralName))
                            .AddSingleton<ICustomResourceWatcher<TResourceSpec>, TWatcher>()
-                           .AddSingleton<ICustomResourceWatcher, TWatcher>();
+                           .AddSingleton<ICustomResourceWatcher>(provider => provider.GetRequiredService<ICustomResourceWatcher<TResourceSpec>>());
         }
     }
 }
