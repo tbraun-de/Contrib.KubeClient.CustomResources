@@ -5,7 +5,8 @@ namespace Contrib.KubeClient.CustomResources
 {
     [ExcludeFromCodeCoverage]
     [PublicAPI]
-    public class CustomResourceDefinition
+    public class CustomResourceDefinition<TResource>
+        where TResource: CustomResource
     {
         public CustomResourceDefinition(string apiVersion, string pluralName)
         {

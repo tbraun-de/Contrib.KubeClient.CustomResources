@@ -21,7 +21,7 @@ namespace Contrib.KubeClient.CustomResources
         }
 
         /// <summary>
-        /// Registers a <see cref="ICustomResourceWatcher{TResource}"/>, <see cref="ICustomResourceClient{TResource}"/> and a <see cref="CustomResourceDefinition"/>.
+        /// Registers a <see cref="ICustomResourceWatcher{TResource}"/>, <see cref="ICustomResourceClient{TResource}"/> and a <see cref="CustomResourceDefinition{TResource}"/>.
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <param name="crdApiVersion">The crd API Version (&lt;apiGroupName&gt;/&lt;version&gt;, e.g. 'your.company/v1').</param>
@@ -32,7 +32,7 @@ namespace Contrib.KubeClient.CustomResources
         {
             services.TryAddSingleton<ICustomResourceClient<TResource>, CustomResourceClient<TResource>>();
             return services.AddKubernetesClient()
-                           .AddSingleton(new CustomResourceDefinition(crdApiVersion, crdPluralName))
+                           .AddSingleton(new CustomResourceDefinition<TResource>(crdApiVersion, crdPluralName))
                            .AddSingleton<TWatcher>()
                            .AddSingleton<ICustomResourceWatcher>(provider => provider.GetRequiredService<TWatcher>())
                            .AddSingleton<ICustomResourceWatcher<TResource>>(provider => provider.GetRequiredService<TWatcher>());

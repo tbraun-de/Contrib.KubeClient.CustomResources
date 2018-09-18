@@ -59,7 +59,7 @@ namespace Contrib.KubeClient.CustomResources
 
         public class TestResourceWatcher<T> : CustomResourceWatcher<CustomResource<T>>
         {
-            public TestResourceWatcher(ILogger<TestResourceWatcher<T>> logger, ICustomResourceClient<CustomResource<T>> client, CustomResourceDefinition crd)
+            public TestResourceWatcher(ILogger<TestResourceWatcher<T>> logger, ICustomResourceClient<CustomResource<T>> client, CustomResourceDefinition<CustomResource<T>> crd)
                 : base(logger, client, crd)
             {}
         }

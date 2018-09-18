@@ -17,7 +17,7 @@ namespace Contrib.KubeClient.CustomResources
     public class CustomResourceClient<TResource> : KubeResourceClient, ICustomResourceClient<TResource> where TResource : CustomResource
     {
         private readonly TimeSpan _timeout;
-        protected CustomResourceDefinition CustomResourceDefinition { get; private set; }
+        protected CustomResourceDefinition<TResource> CustomResourceDefinition { get; private set; }
 
         /// <summary>
         /// Creates a <see cref="CustomResourceClient{TResource}"/>
@@ -25,7 +25,7 @@ namespace Contrib.KubeClient.CustomResources
         /// <param name="client">The kube api client to be used.</param>
         /// <param name="crd">Information about the custom resource definition to work with.</param>
         /// <param name="options">The <see cref="KubernetesConfigurationStoreOptions"/> to be used.</param>
-        public CustomResourceClient(IKubeApiClient client, CustomResourceDefinition crd, IOptions<KubernetesConfigurationStoreOptions> options)
+        public CustomResourceClient(IKubeApiClient client, CustomResourceDefinition<TResource> crd, IOptions<KubernetesConfigurationStoreOptions> options)
             : base(client)
         {
             CustomResourceDefinition = crd;

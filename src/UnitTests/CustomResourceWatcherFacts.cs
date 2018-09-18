@@ -234,7 +234,7 @@ namespace Contrib.KubeClient.CustomResources
         private class TestResourceWatcher : CustomResourceWatcher<CustomResource<Client>>
         {
             public TestResourceWatcher(ICustomResourceClient<CustomResource<Client>> client)
-                : base(new Logger<CustomResourceWatcher<CustomResource<Client>>>(new LoggerFactory()), client, new CustomResourceDefinition(apiVersion: "stable.contrib.identityserver.io/v1", pluralName: "identityclients"), @namespace: string.Empty)
+                : base(new Logger<CustomResourceWatcher<CustomResource<Client>>>(new LoggerFactory()), client, new CustomResourceDefinition<CustomResource<Client>>(apiVersion: "stable.contrib.identityserver.io/v1", pluralName: "identityclients"), @namespace: string.Empty)
             {
                 Connected += (sender, args) => ConnectedTriggered = true;
                 ConnectionError += (sender, args) => ConnectionErrorTriggered = true;

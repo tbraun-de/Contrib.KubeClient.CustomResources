@@ -18,13 +18,13 @@ namespace Contrib.KubeClient.CustomResources
         private readonly Dictionary<string, TResource> _resources = new Dictionary<string, TResource>();
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly ILogger _logger;
-        private readonly CustomResourceDefinition _crd;
+        private readonly CustomResourceDefinition<TResource> _crd;
         private readonly string _namespace;
         private IDisposable _subscription;
         private long _lastSeenResourceVersion = resourceVersionNone;
         private string _resourceFullName;
 
-        protected CustomResourceWatcher(ILogger logger, ICustomResourceClient<TResource> client, CustomResourceDefinition crd, string @namespace = "")
+        protected CustomResourceWatcher(ILogger logger, ICustomResourceClient<TResource> client, CustomResourceDefinition<TResource> crd, string @namespace = "")
         {
             _logger = logger;
             _crd = crd;
