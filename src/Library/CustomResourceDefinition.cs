@@ -1,12 +1,11 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using JetBrains.Annotations;
 
 namespace Contrib.KubeClient.CustomResources
 {
     [ExcludeFromCodeCoverage]
     [PublicAPI]
-    public class CustomResourceDefinition<TResourceSpec>
+    public class CustomResourceDefinition
     {
         public CustomResourceDefinition(string apiVersion, string pluralName)
         {
@@ -23,10 +22,5 @@ namespace Contrib.KubeClient.CustomResources
         /// The plural name (see <code>spec.names.plural</code>) of the CRD.
         /// </summary>
         public string PluralName { get; }
-
-        /// <summary>
-        /// The spec type given by <typeparamref name="TResourceSpec"/>.
-        /// </summary>
-        public Type SpecType { get; } = typeof(TResourceSpec);
     }
 }

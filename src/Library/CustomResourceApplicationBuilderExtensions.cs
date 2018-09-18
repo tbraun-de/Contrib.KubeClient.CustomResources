@@ -22,11 +22,12 @@ namespace Contrib.KubeClient.CustomResources
         }
 
         /// <summary>
-        /// Starts <see cref="ICustomResourceWatcher{TResourceSpec}"/>.
+        /// Starts the <see cref="ICustomResourceWatcher"/> <typeparam name="TWatcher"/>.
         /// </summary>
-        public static IApplicationBuilder UseCustomResourceWatcher<TResourceSpec>(this IApplicationBuilder appBuilder)
+        public static IApplicationBuilder UseCustomResourceWatcher<TWatcher>(this IApplicationBuilder appBuilder)
+            where TWatcher : ICustomResourceWatcher
         {
-            appBuilder.ApplicationServices.GetRequiredService<ICustomResourceWatcher<TResourceSpec>>().StartWatching();
+            appBuilder.ApplicationServices.GetRequiredService<TWatcher>().StartWatching();
             return appBuilder;
         }
     }

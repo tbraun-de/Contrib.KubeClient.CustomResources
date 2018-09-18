@@ -21,19 +21,21 @@ namespace Contrib.KubeClient.CustomResources
         }
 
         /// <summary>
-        /// Registers a <see cref="ICustomResourceWatcher{TResourceSpec}"/>, <see cref="ICustomResourceClient{TResourceSpec}"/> and a <see cref="CustomResourceDefinition{TResourceSpec}"/>.
+        /// Registers a <see cref="ICustomResourceWatcher{TResource}"/>, <see cref="ICustomResourceClient{TResource}"/> and a <see cref="CustomResourceDefinition"/>.
         /// </summary>
         /// <param name="services">The service collection.</param>
         /// <param name="crdApiVersion">The crd API Version (&lt;apiGroupName&gt;/&lt;version&gt;, e.g. 'your.company/v1').</param>
         /// <param name="crdPluralName">The plural name (see <code>spec.names.plural</code>) of the CRD.</param>
-        public static IServiceCollection AddCustomResourceWatcher<TResourceSpec, TWatcher>(this IServiceCollection services, string crdApiVersion, string crdPluralName)
-            where TWatcher : class, ICustomResourceWatcher<TResourceSpec>
+        public static IServiceCollection AddCustomResourceWatcher<TResource, TWatcher>(this IServiceCollection services, string crdApiVersion, string crdPluralName)
+            where TWatcher : class, ICustomResourceWatcher<TResource>
+            where TResource : CustomResource
         {
-            services.TryAddSingleton<ICustomResourceClient<TResourceSpec>, CustomResourceClient<TResourceSpec>>();
+            services.TryAddSingleton<ICustomResourceClient<TResource>, CustomResourceClient<TResource>>();
             return services.AddKubernetesClient()
-                           .AddSingleton(new CustomResourceDefinition<TResourceSpec>(crdApiVersion, crdPluralName))
-                           .AddSingleton<ICustomResourceWatcher<TResourceSpec>, TWatcher>()
-                           .AddSingleton<ICustomResourceWatcher>(provider => provider.GetRequiredService<ICustomResourceWatcher<TResourceSpec>>());
+                           .AddSingleton(new CustomResourceDefinition(crdApiVersion, crdPluralName))
+                           .AddSingleton<TWatcher>()
+                           .AddSingleton<ICustomResourceWatcher>(provider => provider.GetRequiredService<TWatcher>())
+                           .AddSingleton<ICustomResourceWatcher<TResource>>(provider => provider.GetRequiredService<TWatcher>());
         }
     }
 }

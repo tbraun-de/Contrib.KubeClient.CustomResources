@@ -17,12 +17,12 @@ namespace Contrib.KubeClient.CustomResources
     {
         private readonly TestResourceWatcher _watcher;
         private readonly Subject<IResourceEventV1<CustomResource<Client>>> _resourceSubject;
-        private readonly Mock<ICustomResourceClient<Client>> _resourceClientMock;
+        private readonly Mock<ICustomResourceClient<CustomResource<Client>>> _resourceClientMock;
 
         public CustomResourceWatcherFacts()
         {
             _resourceSubject = new Subject<IResourceEventV1<CustomResource<Client>>>();
-            _resourceClientMock = new Mock<ICustomResourceClient<Client>>();
+            _resourceClientMock = new Mock<ICustomResourceClient<CustomResource<Client>>>();
             _resourceClientMock.SetupSequence(mock => mock.Watch(It.IsAny<string>(), It.IsAny<string>()))
                                .Returns(_resourceSubject)
                                .Returns(new Subject<IResourceEventV1<CustomResource<Client>>>());
@@ -37,7 +37,7 @@ namespace Contrib.KubeClient.CustomResources
 
             _resourceSubject.OnNext(expectedResource);
 
-            _watcher.Resources.Should().Contain(expectedResource.Resource.Spec);
+            _watcher.RawResources.Should().Contain(expectedResource.Resource);
         }
 
         [Fact]
@@ -50,13 +50,13 @@ namespace Contrib.KubeClient.CustomResources
 
             _resourceSubject.OnNext(modifiedResource);
 
-            _watcher.Resources.Should().Contain(modifiedResource.Resource.Spec);
+            _watcher.RawResources.Should().Contain(modifiedResource.Resource);
         }
 
         [Fact]
         public void DeletedResourceGetsRemovedFromCache()
         {
-            var watcherResources = _watcher.Resources;
+            var watcherResources = _watcher.RawResources;
 
             var addedResource = CreateResourceEvent(ResourceEventType.Added, "expectedClientId", resourceVersion: "1");
             var removedResource = CreateResourceEvent(ResourceEventType.Deleted, "expectedClientId", resourceVersion: "2");
@@ -166,7 +166,7 @@ namespace Contrib.KubeClient.CustomResources
 
             _resourceSubject.OnError(new HttpRequestException<StatusV1>(HttpStatusCode.Gone, new StatusV1()));
 
-            _watcher.Resources.Should().BeEmpty();
+            _watcher.RawResources.Should().BeEmpty();
         }
 
         [Fact]
@@ -231,10 +231,10 @@ namespace Contrib.KubeClient.CustomResources
                 }
             };
 
-        private class TestResourceWatcher : CustomResourceWatcher<Client>
+        private class TestResourceWatcher : CustomResourceWatcher<CustomResource<Client>>
         {
-            public TestResourceWatcher(ICustomResourceClient<Client> client)
-                : base(new Logger<CustomResourceWatcher<Client>>(new LoggerFactory()), client, new CustomResourceDefinition<Client>(apiVersion: "stable.contrib.identityserver.io/v1", pluralName: "identityclients"), @namespace: string.Empty)
+            public TestResourceWatcher(ICustomResourceClient<CustomResource<Client>> client)
+                : base(new Logger<CustomResourceWatcher<CustomResource<Client>>>(new LoggerFactory()), client, new CustomResourceDefinition(apiVersion: "stable.contrib.identityserver.io/v1", pluralName: "identityclients"), @namespace: string.Empty)
             {
                 Connected += (sender, args) => ConnectedTriggered = true;
                 ConnectionError += (sender, args) => ConnectionErrorTriggered = true;

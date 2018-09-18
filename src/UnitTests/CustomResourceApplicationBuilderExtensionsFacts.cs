@@ -23,8 +23,8 @@ namespace Contrib.KubeClient.CustomResources
             serviceCollection.Configure<KubernetesConfigurationStoreOptions>(opt => opt.ConnectionString = "https://nowhere");
             serviceCollection.AddSingleton(CreateResourceClient<int>());
             serviceCollection.AddSingleton(CreateResourceClient<string>());
-            serviceCollection.AddCustomResourceWatcher<string, TestResourceWatcher<string>>(crdApiVersion: "foo/v1", crdPluralName: "strings");
-            serviceCollection.AddCustomResourceWatcher<int, TestResourceWatcher<int>>(crdApiVersion: "foo/v1", crdPluralName: "integers");
+            serviceCollection.AddCustomResourceWatcher<CustomResource<string>, TestResourceWatcher<string>>(crdApiVersion: "foo/v1", crdPluralName: "strings");
+            serviceCollection.AddCustomResourceWatcher<CustomResource<int>, TestResourceWatcher<int>>(crdApiVersion: "foo/v1", crdPluralName: "integers");
             _serviceProvider = serviceCollection.BuildServiceProvider();
             _applicationBuilder = new ApplicationBuilder(_serviceProvider);
         }
@@ -43,23 +43,23 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void StartsOnlyRequestedWatcher()
         {
-            _applicationBuilder.UseCustomResourceWatcher<int>();
+            _applicationBuilder.UseCustomResourceWatcher<TestResourceWatcher<string>>();
 
-            _serviceProvider.GetServices<ICustomResourceWatcher>()
+            _serviceProvider.GetServices<TestResourceWatcher<string>>()
                             .Should()
                             .ContainSingle(watcher => watcher.IsActive);
         }
 
-        private static ICustomResourceClient<TResourceSpec> CreateResourceClient<TResourceSpec>()
+        private static ICustomResourceClient<CustomResource<TResourceSpec>> CreateResourceClient<TResourceSpec>()
         {
-            var clientMock = new Mock<ICustomResourceClient<TResourceSpec>>();
+            var clientMock = new Mock<ICustomResourceClient<CustomResource<TResourceSpec>>>();
             clientMock.Setup(mock => mock.Watch(It.IsAny<string>(), It.IsAny<string>())).Returns(new Subject<IResourceEventV1<CustomResource<TResourceSpec>>>());
             return clientMock.Object;
         }
 
-        public class TestResourceWatcher<T> : CustomResourceWatcher<T>
+        public class TestResourceWatcher<T> : CustomResourceWatcher<CustomResource<T>>
         {
-            public TestResourceWatcher(ILogger<TestResourceWatcher<T>> logger, ICustomResourceClient<T> client, CustomResourceDefinition<T> crd)
+            public TestResourceWatcher(ILogger<TestResourceWatcher<T>> logger, ICustomResourceClient<CustomResource<T>> client, CustomResourceDefinition crd)
                 : base(logger, client, crd)
             {}
         }
