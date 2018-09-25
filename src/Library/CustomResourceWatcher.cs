@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    public abstract class CustomResourceWatcher<TResource> : ICustomResourceWatcher<TResource>, IDisposable
+    public abstract class CustomResourceWatcher<TResource> : ICustomResourceWatcher<TResource>
         where TResource : CustomResource
     {
         private const long resourceVersionNone = 0;

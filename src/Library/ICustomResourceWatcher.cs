@@ -4,7 +4,7 @@ using JetBrains.Annotations;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    public interface ICustomResourceWatcher
+    public interface ICustomResourceWatcher : IDisposable
     {
         /// <summary>
         /// Triggered whenever the connection to the KubeApi is closed.
@@ -30,7 +30,6 @@ namespace Contrib.KubeClient.CustomResources
         /// Starts watching for CustomResources.
         /// </summary>
         void StartWatching();
-
     }
 
     [PublicAPI]
