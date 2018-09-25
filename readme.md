@@ -13,7 +13,7 @@ CustomResourceWatchers can be injected via `Microsoft.Extensions.DependencyInjec
 services
     .AddOptions()
     .Configure<KubernetesConfigurationStoreOptions>(opt => opt.ConnectionString = "http://localhost:8001/")
-    .AddCustomResourceWatcher<CustomerResource, CustomerWatcher>(crdApiVersion="stable.myorg.com", crdPluralName="customers");
+    .AddCustomResourceWatcher<CustomerResource, CustomerWatcher>(crdApiVersion: "stable.myorg.com", crdPluralName: "customers");
 ```
 
 Make sure to set `crdApiVersion` and `crdPluralName` according to the values specified in the CRD you are using.
