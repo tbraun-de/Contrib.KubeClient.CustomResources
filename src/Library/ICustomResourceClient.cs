@@ -1,11 +1,16 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using KubeClient.Models;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    public interface ICustomResourceClient<TResource> where TResource: CustomResource
+    /// <summary>
+    /// Client for Kubernetes Custom Resources of a specific type.
+    /// </summary>
+    /// <typeparam name="TResource">The Kubernetes Custom Resource DTO type.</typeparam>
+    public interface ICustomResourceClient<TResource>
+        where TResource: CustomResource
     {
         /// <summary>
         /// Watches for events related to <see cref="CustomResource"/>.

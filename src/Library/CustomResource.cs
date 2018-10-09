@@ -1,13 +1,12 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
-using JetBrains.Annotations;
 using KubeClient.Models;
 using Newtonsoft.Json;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    [ExcludeFromCodeCoverage]
-    [PublicAPI]
+    /// <summary>
+    /// Base class for DTOs for Kubernetes Custom Resources.
+    /// </summary>
     public class CustomResource : KubeResourceV1, IEquatable<CustomResource>
     {
         [JsonIgnore]
@@ -34,8 +33,9 @@ namespace Contrib.KubeClient.CustomResources
         }
     }
 
-    [ExcludeFromCodeCoverage]
-    [PublicAPI]
+    /// <summary>
+    /// Base class for DTOs for Kubernetes Custom Resources with a "spec" and a "status" field.
+    /// </summary>
     public class CustomResource<TSpec, TStatus> : CustomResource, IEquatable<CustomResource<TSpec, TStatus>>
     {
         public TSpec Spec { get; set; }
@@ -67,8 +67,9 @@ namespace Contrib.KubeClient.CustomResources
         }
     }
 
-    [ExcludeFromCodeCoverage]
-    [PublicAPI]
+    /// <summary>
+    /// Base class for DTOs for Kubernetes Custom Resources with a "spec" and a "status" field.
+    /// </summary>
     public class CustomResource<TSpec> : CustomResource<TSpec, StatusV1>
     {
         public CustomResource()

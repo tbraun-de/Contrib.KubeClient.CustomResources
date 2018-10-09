@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Linq;
 using System.Net;
 using System.Reactive.Subjects;
@@ -234,7 +233,7 @@ namespace Contrib.KubeClient.CustomResources
         private class TestResourceWatcher : CustomResourceWatcher<CustomResource<Client>>
         {
             public TestResourceWatcher(ICustomResourceClient<CustomResource<Client>> client)
-                : base(new Logger<CustomResourceWatcher<CustomResource<Client>>>(new LoggerFactory()), client, new CustomResourceDefinition<CustomResource<Client>>(apiVersion: "stable.contrib.identityserver.io/v1", pluralName: "identityclients"), @namespace: string.Empty)
+                : base(new Logger<CustomResourceWatcher<CustomResource<Client>>>(new LoggerFactory()), client, new CustomResourceDefinition<CustomResource<Client>>(apiVersion: "stable.contrib.identityserver.io/v1", pluralName: "identityclients"), new CustomResourceNamespace<CustomResource<Client>>(""))
             {
                 Connected += (sender, args) => ConnectedTriggered = true;
                 ConnectionError += (sender, args) => ConnectionErrorTriggered = true;

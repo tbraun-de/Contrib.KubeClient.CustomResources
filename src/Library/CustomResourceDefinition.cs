@@ -1,13 +1,17 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using JetBrains.Annotations;
-
 namespace Contrib.KubeClient.CustomResources
 {
-    [ExcludeFromCodeCoverage]
-    [PublicAPI]
+    /// <summary>
+    /// Identifies a specific Kubernetes Custom Resource type.
+    /// </summary>
+    /// <typeparam name="TResource">The Kubernetes Custom Resource DTO type.</typeparam>
     public class CustomResourceDefinition<TResource>
         where TResource: CustomResource
     {
+        /// <summary>
+        /// Creates a new Kubernetes Custom Resource Definition.
+        /// </summary>
+        /// <param name="apiVersion">The Kubernetes API Version of the resource (&lt;apiGroupName&gt;/&lt;version&gt;, e.g. 'your.company/v1').</param>
+        /// <param name="pluralName">The plural name of the resource (see <code>spec.names.plural</code>).</param>
         public CustomResourceDefinition(string apiVersion, string pluralName)
         {
             ApiVersion = apiVersion;
@@ -15,13 +19,15 @@ namespace Contrib.KubeClient.CustomResources
         }
 
         /// <summary>
-        /// The crd API Version (&lt;apiGroupName&gt;/&lt;version&gt;, e.g. 'your.company/v1').
+        /// The Kubernetes API Version of the resource (&lt;apiGroupName&gt;/&lt;version&gt;, e.g. 'your.company/v1').
         /// </summary>
         public string ApiVersion { get; }
 
         /// <summary>
-        /// The plural name (see <code>spec.names.plural</code>) of the CRD.
+        /// The plural name of the resource (see <code>spec.names.plural</code>).
         /// </summary>
         public string PluralName { get; }
+
+        public override string ToString() => $"{ApiVersion}/{PluralName}";
     }
 }

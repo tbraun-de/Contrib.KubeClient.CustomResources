@@ -1,11 +1,7 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
-using JetBrains.Annotations;
+using System;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    [ExcludeFromCodeCoverage]
-    [PublicAPI]
     public class KubernetesConfigurationStoreOptions
     {
         /// <summary>

@@ -1,9 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 
 namespace Contrib.KubeClient.CustomResources
 {
+    /// <summary>
+    /// Watches Kubernetes Custom Resources for changes.
+    /// </summary>
     public interface ICustomResourceWatcher : IDisposable
     {
         /// <summary>
@@ -27,12 +29,15 @@ namespace Contrib.KubeClient.CustomResources
         bool IsActive { get; }
 
         /// <summary>
-        /// Starts watching for CustomResources.
+        /// Starts watching for changes to the resource collection. Stop by calling <see cref="IDisposable.Dispose"/>.
         /// </summary>
         void StartWatching();
     }
 
-    [PublicAPI]
+    /// <summary>
+    /// Watches Kubernetes Custom Resources of a specific type for changes and keeps an in-memory representation.
+    /// </summary>
+    /// <typeparam name="TResource">The Kubernetes Custom Resource DTO type.</typeparam>
     public interface ICustomResourceWatcher<TResource> : ICustomResourceWatcher
         where TResource : CustomResource
     {

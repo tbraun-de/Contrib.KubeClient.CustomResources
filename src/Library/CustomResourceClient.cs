@@ -1,9 +1,7 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using HTTPlease;
-using JetBrains.Annotations;
 using KubeClient;
 using KubeClient.Models;
 using KubeClient.ResourceClients;
@@ -11,16 +9,18 @@ using Microsoft.Extensions.Options;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    [ExcludeFromCodeCoverage]
-    [UsedImplicitly]
-    [PublicAPI]
-    public class CustomResourceClient<TResource> : KubeResourceClient, ICustomResourceClient<TResource> where TResource : CustomResource
+    /// <summary>
+    /// Client for Kubernetes Custom Resources of a specific type.
+    /// </summary>
+    /// <typeparam name="TResource">The Kubernetes Custom Resource DTO type.</typeparam>
+    public class CustomResourceClient<TResource> : KubeResourceClient, ICustomResourceClient<TResource>
+        where TResource : CustomResource
     {
         private readonly TimeSpan _timeout;
-        protected CustomResourceDefinition<TResource> CustomResourceDefinition { get; private set; }
+        protected CustomResourceDefinition<TResource> CustomResourceDefinition { get; }
 
         /// <summary>
-        /// Creates a <see cref="CustomResourceClient{TResource}"/>
+        /// Creates a Kubernetes Custom Resources client.
         /// </summary>
         /// <param name="client">The kube api client to be used.</param>
         /// <param name="crd">Information about the custom resource definition to work with.</param>
