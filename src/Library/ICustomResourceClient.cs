@@ -20,6 +20,14 @@ namespace Contrib.KubeClient.CustomResources
         IObservable<IResourceEventV1<TResource>> Watch(string @namespace = "", string resourceVersionOffset = "0");
 
         /// <summary>
+        /// Returns an existing resource given by <paramref name="resourceName"/> within an optional <paramref name="namespace"/>.
+        /// </summary>
+        /// <param name="resourceName">The name of the target resource to return.</param>
+        /// <param name="namespace">The namespace the resource is located in.</param>
+        /// /// <param name="cancellationToken">The cancellation token.</param>
+        Task<TResource> ReadAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Creates a new resource.
         /// </summary>
         /// <param name="resource">The resource to create.</param>
