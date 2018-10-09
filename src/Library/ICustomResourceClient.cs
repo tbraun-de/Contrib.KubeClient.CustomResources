@@ -24,7 +24,7 @@ namespace Contrib.KubeClient.CustomResources
         /// </summary>
         /// <param name="resourceName">The name of the target resource to return.</param>
         /// <param name="namespace">The namespace the resource is located in.</param>
-        /// /// <param name="cancellationToken">The cancellation token.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
         Task<TResource> ReadAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default);
 
         /// <summary>
