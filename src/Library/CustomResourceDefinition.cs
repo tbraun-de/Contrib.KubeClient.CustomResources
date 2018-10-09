@@ -1,5 +1,6 @@
 namespace Contrib.KubeClient.CustomResources
 {
+    // ReSharper disable once UnusedTypeParameter
     /// <summary>
     /// Identifies a specific Kubernetes Custom Resource type.
     /// </summary>

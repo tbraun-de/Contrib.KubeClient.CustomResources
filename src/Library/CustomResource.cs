@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 using KubeClient.Models;
 using Newtonsoft.Json;
 
@@ -7,6 +8,7 @@ namespace Contrib.KubeClient.CustomResources
     /// <summary>
     /// Base class for DTOs for Kubernetes Custom Resources.
     /// </summary>
+    [PublicAPI]
     public class CustomResource : KubeResourceV1, IEquatable<CustomResource>
     {
         [JsonIgnore]

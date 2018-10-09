@@ -1,3 +1,5 @@
+using JetBrains.Annotations;
+
 namespace Contrib.KubeClient.CustomResources
 {
     /// <summary>
@@ -10,14 +12,15 @@ namespace Contrib.KubeClient.CustomResources
         /// Creates a new namespace selector.
         /// </summary>
         /// <param name="value">The name of the Kubernetes namespace.</param>
-        public CustomResourceNamespace(string value)
+        public CustomResourceNamespace([CanBeNull] string value)
         {
-            Value = value ?? "";
+            Value = value;
         }
 
         /// <summary>
         /// The name of the Kubernetes namespace.
         /// </summary>
+        [CanBeNull]
         public string Value { get; }
     }
 }

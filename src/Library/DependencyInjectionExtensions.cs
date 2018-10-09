@@ -1,10 +1,12 @@
 using System;
+using JetBrains.Annotations;
 using KubeClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Contrib.KubeClient.CustomResources
 {
+    [PublicAPI]
     public static class DependencyInjectionExtensions
     {
         /// <summary>

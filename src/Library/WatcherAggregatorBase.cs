@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
 namespace Contrib.KubeClient.CustomResources
@@ -11,6 +12,7 @@ namespace Contrib.KubeClient.CustomResources
     /// <summary>
     /// Base class for building classes that aggregate and debounce events from one more <see cref="ICustomResourceWatcher"/>s.
     /// </summary>
+    [PublicAPI]
     public abstract class WatcherAggregatorBase : IDisposable
     {
         private readonly IScheduler _scheduler;

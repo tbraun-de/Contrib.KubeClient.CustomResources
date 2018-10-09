@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using HTTPlease;
+using JetBrains.Annotations;
 using KubeClient.Models;
 using Microsoft.Extensions.Logging;
 
@@ -23,7 +24,7 @@ namespace Contrib.KubeClient.CustomResources
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly ILogger<CustomResourceWatcher<TResource>> _logger;
         private readonly CustomResourceDefinition<TResource> _crd;
-        private readonly string _namespace;
+        [NotNull] private readonly string _namespace;
         private IDisposable _subscription;
         private long _lastSeenResourceVersion = resourceVersionNone;
 
