@@ -42,6 +42,14 @@ namespace Contrib.KubeClient.CustomResources
             return ObserveEvents<TResource>(httpRequest);
         }
 
+        public virtual async Task<TResource> ReadAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(resourceName)) throw new ArgumentException("Argument cannot be null, empty, or entirely composed of whitespaces.", nameof(resourceName));
+
+            var httpRequest = CreateBaseRequest(@namespace).WithRelativeUri(resourceName);
+            return await GetSingleResource<TResource>(httpRequest, cancellationToken);
+        }
+
         public virtual async Task<TResource> CreateAsync(TResource resource, CancellationToken cancellationToken = default)
         {
             var httpRequest = CreateBaseRequest(resource.Metadata.Namespace);
@@ -61,7 +69,7 @@ namespace Contrib.KubeClient.CustomResources
 
         public virtual async Task<TResource> DeleteAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(resourceName)) throw new ArgumentException("Argument cannot be null, empty, or entirely composed of whitespace: 'name'.", nameof(resourceName));
+            if (string.IsNullOrWhiteSpace(resourceName)) throw new ArgumentException("Argument cannot be null, empty, or entirely composed of whitespaces.", nameof(resourceName));
 
             var deleteOptions = new DeleteOptionsV1 {PropagationPolicy = DeletePropagationPolicy.Foreground};
             var httpRequest = CreateBaseRequest(@namespace).WithRelativeUri(resourceName);
