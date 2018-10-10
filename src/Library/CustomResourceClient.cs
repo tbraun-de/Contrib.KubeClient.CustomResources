@@ -17,18 +17,18 @@ namespace Contrib.KubeClient.CustomResources
         where TResource : CustomResource
     {
         private readonly TimeSpan _timeout;
-        protected CustomResourceDefinition<TResource> CustomResourceDefinition { get; }
+        protected CustomResourceDefinition<TResource> Definition { get; }
 
         /// <summary>
         /// Creates a Kubernetes Custom Resources client.
         /// </summary>
         /// <param name="client">The kube api client to be used.</param>
-        /// <param name="crd">Information about the custom resource definition to work with.</param>
+        /// <param name="definition">Information about the custom resource definition to work with.</param>
         /// <param name="options">The <see cref="KubernetesConfigurationStoreOptions"/> to be used.</param>
-        public CustomResourceClient(IKubeApiClient client, CustomResourceDefinition<TResource> crd, IOptions<KubernetesConfigurationStoreOptions> options)
+        public CustomResourceClient(IKubeApiClient client, CustomResourceDefinition<TResource> definition, IOptions<KubernetesConfigurationStoreOptions> options)
             : base(client)
         {
-            CustomResourceDefinition = crd;
+            Definition = definition;
             _timeout = options.Value.WatchTimeout;
         }
 
@@ -80,12 +80,12 @@ namespace Contrib.KubeClient.CustomResources
 
         private HttpRequest CreateBaseRequest(string @namespace)
         {
-            var httpRequest = KubeRequest.Create($"/apis/{CustomResourceDefinition.ApiVersion}");
+            var httpRequest = KubeRequest.Create($"/apis/{Definition.ApiVersion}");
 
             if (!string.IsNullOrWhiteSpace(@namespace))
                 httpRequest = httpRequest.WithRelativeUri($"namespaces/{@namespace}/");
 
-            return httpRequest.WithRelativeUri(CustomResourceDefinition.PluralName);
+            return httpRequest.WithRelativeUri(Definition.PluralName);
         }
     }
 }
