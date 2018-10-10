@@ -11,6 +11,18 @@ namespace Contrib.KubeClient.CustomResources
     [PublicAPI]
     public class CustomResource : KubeResourceV1, IEquatable<CustomResource>
     {
+        public CustomResource()
+        {}
+
+        public CustomResource(string @namespace, string name)
+        {
+            Metadata = new ObjectMetaV1
+            {
+                Namespace = @namespace,
+                Name = name
+            };
+        }
+
         [JsonIgnore]
         public string GlobalName
             => string.IsNullOrWhiteSpace(Metadata.Namespace)
@@ -46,6 +58,16 @@ namespace Contrib.KubeClient.CustomResources
         public CustomResource()
         {}
 
+        public CustomResource(string @namespace, string name)
+            : base(@namespace, name)
+        {}
+
+        public CustomResource(string @namespace, string name, TSpec spec)
+            : base(@namespace, name)
+        {
+            Spec = spec;
+        }
+
         public CustomResource(TSpec spec)
         {
             Spec = spec;
@@ -77,8 +99,13 @@ namespace Contrib.KubeClient.CustomResources
         public CustomResource()
         {}
 
-        public CustomResource(TSpec spec)
-            : base(spec)
+        public CustomResource(string @namespace, string name) : base(@namespace, name)
+        {}
+
+        public CustomResource(string @namespace, string name, TSpec spec) : base(@namespace, name, spec)
+        {}
+
+        public CustomResource(TSpec spec) : base(spec)
         {}
     }
 }
