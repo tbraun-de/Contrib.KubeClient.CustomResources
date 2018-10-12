@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using KubeClient;
 using KubeClient.Extensions.AuthProviders.Gcp;
+using KubeClient.MessageHandlers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -21,6 +22,7 @@ namespace Contrib.KubeClient.CustomResources
 
         public IKubeApiClient Build()
         {
+            IAuthProviderConfigurationStrategy authProviderStrategy = null;
             KubeClientOptions options;
             if (!string.IsNullOrWhiteSpace(_connectionString))
             {
@@ -29,9 +31,12 @@ namespace Contrib.KubeClient.CustomResources
             }
             else if (TryGetKubeConfigPath(out var kubeConfigPath))
             {
-                options = K8sConfig.Load(kubeConfigPath).ToKubeClientOptions();
+                string kubeContext = "dev";
+                var config = K8sConfig.Load(kubeConfigPath);
+                if (IsGcpAuthProviderStrategy(config, kubeContext))
+                    authProviderStrategy = new GcpAuthProviderStrategy(kubeContext);
+                options = config.ToKubeClientOptions("dev");
                 _logger.LogInformation($"Using kube config ({options.ApiEndPoint}).");
-                return KubeApiClient.Create(new GcpAuthProviderStrategy(), options);
             }
             else
             {
@@ -39,8 +44,13 @@ namespace Contrib.KubeClient.CustomResources
                 _logger.LogInformation($"Using cluster-internal kubernetes connection ({options.ApiEndPoint}).");
             }
 
+            if (authProviderStrategy != null)
+                return KubeApiClient.Create(authProviderStrategy, options);
             return KubeApiClient.Create(options);
         }
+
+        private bool IsGcpAuthProviderStrategy(K8sConfig config, string context)
+            => true;
 
         private static bool TryGetKubeConfigPath(out string path)
         {
