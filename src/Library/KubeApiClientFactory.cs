@@ -31,11 +31,10 @@ namespace Contrib.KubeClient.CustomResources
             }
             else if (TryGetKubeConfigPath(out var kubeConfigPath))
             {
-                string kubeContext = "dev";
                 var config = K8sConfig.Load(kubeConfigPath);
-                if (IsGcpAuthProviderStrategy(config, kubeContext))
-                    authProviderStrategy = new GcpAuthProviderStrategy(kubeContext);
-                options = config.ToKubeClientOptions("dev");
+                if (IsGcpAuthProviderStrategy(config))
+                    authProviderStrategy = new GcpAuthProviderStrategy();
+                options = config.ToKubeClientOptions();
                 _logger.LogInformation($"Using kube config ({options.ApiEndPoint}).");
             }
             else
@@ -49,8 +48,12 @@ namespace Contrib.KubeClient.CustomResources
             return KubeApiClient.Create(options);
         }
 
-        private bool IsGcpAuthProviderStrategy(K8sConfig config, string context)
-            => true;
+        private bool IsGcpAuthProviderStrategy(K8sConfig config)
+        {
+            var targetContext = config.Contexts.Find(context => context.Name == config.CurrentContextName);
+            var userIdentity = config.UserIdentities.Find(user => user.Name == targetContext.Config.UserName);
+            return userIdentity.Config.AuthProvider.Name == "gcp";
+        }
 
         private static bool TryGetKubeConfigPath(out string path)
         {
