@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ContentModelStore">
+    <e p="C:\_repos\Contrib.KubeClient.CustomResources" t="IncludeFlat">
+      <e p="Contrib.KubeClient.sln" t="IncludeFlat" />
+    </e>
+    <e p="C:\Users\matthiasr\.Rider2018.1\system\resharper-host\local\Transient\ReSharperHost\v12\SolutionCaches\_Contrib.KubeClient.1701444821.00" t="ExcludeRecursive" />
+  </component>
+</project>
