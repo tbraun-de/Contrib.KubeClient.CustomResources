@@ -23,7 +23,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="JetBrains.Annotations" Version="2018.2.1" />
-    <PackageReference Include="KubeClient.Extensions.AuthProviders.Gcp" Version="2.2.0-gcp-auth-provide0074" />
+    <PackageReference Include="KubeClient.Extensions.AuthProviders.Gcp" Version="2.2.0-gcp-auth-provide0075" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="2.1.1" />
     <PackageReference Include="System.Reactive.Linq" Version="4.1.2" />
