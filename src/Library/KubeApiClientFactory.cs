@@ -34,7 +34,7 @@ namespace Contrib.KubeClient.CustomResources
                 var config = K8sConfig.Load(kubeConfigPath);
                 if (IsGcpAuthProviderStrategy(config))
                     authProviderStrategy = new GcpAuthProviderStrategy();
-                options = config.ToKubeClientOptions();
+                options = config.ToKubeClientOptions(defaultKubeNamespace: "default");
                 _logger.LogInformation($"Using kube config ({options.ApiEndPoint}).");
             }
             else
