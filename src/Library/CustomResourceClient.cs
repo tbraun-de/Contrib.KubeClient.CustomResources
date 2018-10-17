@@ -39,7 +39,7 @@ namespace Contrib.KubeClient.CustomResources
                              .WithQueryParameter("resourceVersion", resourceVersionOffset)
                              .WithQueryParameter("timeoutSeconds", _timeout.TotalSeconds);
 
-            return ObserveEvents<TResource>(httpRequest);
+            return ObserveEvents<TResource>(httpRequest, $"watching {Definition.PluralName} in {@namespace}");
         }
 
         public virtual async Task<TResource> ReadAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default)
