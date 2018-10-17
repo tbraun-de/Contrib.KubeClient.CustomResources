@@ -13,11 +13,19 @@ namespace Contrib.KubeClient.CustomResources
         where TResource: CustomResource
     {
         /// <summary>
-        /// Watches for events related to <see cref="CustomResource"/>.
+        /// Watches for events related to this type of resource.
         /// </summary>
         /// <param name="namespace">The target Kubernetes namespace to watch for (leave empty for cluster-wide watch).</param>
         /// <param name="resourceVersionOffset">The resource version to start from (defaults to 0).</param>
         IObservable<IResourceEventV1<TResource>> Watch(string @namespace = "", string resourceVersionOffset = "0");
+
+        /// <summary>
+        /// Lists all instances of this type of resource.
+        /// </summary>
+        /// <param name="labelSelector">An optional Kubernetes label selector expression used to filter the resources.</param>
+        /// <param name="namespace">The namespace to check for resources.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        Task<CustomResourceList<TResource>> ListAsync(string labelSelector = null, string @namespace = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns an existing resource given by <paramref name="resourceName"/> within an optional <paramref name="namespace"/>.

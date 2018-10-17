@@ -42,6 +42,15 @@ namespace Contrib.KubeClient.CustomResources
             return ObserveEvents<TResource>(httpRequest, $"watching {Definition.PluralName} in {@namespace}");
         }
 
+        public async Task<CustomResourceList<TResource>> ListAsync(string labelSelector = null, string @namespace = null, CancellationToken cancellationToken = default)
+        {
+            var httpRequest = CreateBaseRequest(@namespace);
+            if (!string.IsNullOrWhiteSpace(labelSelector))
+                httpRequest = httpRequest.WithQueryParameter("labelSelector", labelSelector);
+
+            return await GetResourceList<CustomResourceList<TResource>>(httpRequest, cancellationToken);
+        }
+
         public virtual async Task<TResource> ReadAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(resourceName)) throw new ArgumentException("Argument cannot be null, empty, or entirely composed of whitespaces.", nameof(resourceName));
