@@ -1,8 +1,8 @@
 using System;
 using JetBrains.Annotations;
 using KubeClient;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -10,12 +10,18 @@ namespace Contrib.KubeClient.CustomResources
     public static class DependencyInjectionExtensions
     {
         /// <summary>
-        /// Registers the <see cref="IKubeApiClient"/>.
+        /// Add a <see cref="KubeApiClient" /> to the service collection. Automatically uses a pod service account if no API endpoint is configured.
         /// </summary>
-        public static IServiceCollection AddKubernetesClient(this IServiceCollection services)
+        public static IServiceCollection AddKubeClient(this IServiceCollection services, IConfiguration configuration)
         {
-            services.TryAddSingleton<KubeApiClientFactory>();
-            services.TryAddSingleton(provider => provider.GetRequiredService<KubeApiClientFactory>().Build());
+            var options = new KubeClientOptions();
+            configuration.Bind(options);
+
+            if (options.ApiEndPoint == null)
+                options = KubeClientOptions.FromPodServiceAccount();
+
+            services.AddKubeClient(options);
+
             return services;
         }
 
@@ -27,8 +33,7 @@ namespace Contrib.KubeClient.CustomResources
         /// <param name="definition">The CRD API Version and plural name.</param>
         public static IServiceCollection AddCustomResourceClient<TResource>(this IServiceCollection services, CustomResourceDefinition<TResource> definition)
             where TResource : CustomResource
-            => services.AddKubernetesClient()
-                       .AddSingleton<ICustomResourceClient<TResource>, CustomResourceClient<TResource>>()
+            => services.AddSingleton<ICustomResourceClient<TResource>, CustomResourceClient<TResource>>()
                        .AddSingleton(definition);
 
         /// <summary>

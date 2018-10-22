@@ -1,7 +1,9 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Subjects;
 using FluentAssertions;
 using KubeClient.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -18,7 +20,7 @@ namespace Contrib.KubeClient.CustomResources
             _provider = new ServiceCollection()
                        .AddLogging(builder => builder.AddConsole())
                        .AddOptions()
-                       .Configure<KubernetesConfigurationStoreOptions>(opt => opt.ConnectionString = "https://example.com")
+                       .AddKubeClient(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string> {["ApiEndPoint"] = "http://example.com/"}).Build())
                        .AddSingleton(CreateResourceClient<int>())
                        .AddSingleton(CreateResourceClient<string>())
                        .AddCustomResourceWatcher(new CustomResourceDefinition<CustomResource<string>>(apiVersion: "foo/v1", pluralName: "strings"))

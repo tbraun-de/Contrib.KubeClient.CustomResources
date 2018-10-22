@@ -28,18 +28,12 @@ public class PersonSpec
 
 You can then configure an instance of `ICustomResourceClient<T>` for dependency injection like this:
 ```csharp
-services
-    .AddOptions()
-    .Configure<KubernetesConfigurationStoreOptions>(opt => opt.ConnectionString = "http://localhost:8001/")
-    .AddCustomResourceClient(PersonResource.Definition);
+services.AddCustomResourceClient(PersonResource.Definition);
 ```
 
 You can also set up a watcher that watches Custom Resources of a specific type for changes and keeps an in-memory representation:
 ```csharp
-services
-    .AddOptions()
-    .Configure<KubernetesConfigurationStoreOptions>(opt => opt.ConnectionString = "http://localhost:8001/")
-    .AddCustomResourceWatcher(PersonResource.Definition, @namespace: "my-kubernetes-namespace");
+services.AddCustomResourceWatcher(PersonResource.Definition, @namespace: "my-kubernetes-namespace");
 ```
 
 To start the watcher don't forget to call the following on the `IServiceProvider`:
@@ -50,12 +44,6 @@ provider.UseCustomResourceWatcher<PersonResource>();
 ```csharp
 provider.UseCustomResourceWatchers();
 ```
-
-### Running in or outside the K8s cluster
-
-We support both, running inside a K8s cluster or accessing it remotely.
-Using `KubeApiClientFactory` you can provide a connection string (by setting the `KubernetesConfigurationStoreOptions.ConnectionString`) to be used.
-If this connection string is set to `null`, ` `, or `string.Empty` we assume that the application is running inside the cluster.
 
 ## Development
 
