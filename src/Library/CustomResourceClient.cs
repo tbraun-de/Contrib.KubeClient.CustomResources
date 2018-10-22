@@ -5,7 +5,6 @@ using HTTPlease;
 using KubeClient;
 using KubeClient.Models;
 using KubeClient.ResourceClients;
-using Microsoft.Extensions.Options;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -16,7 +15,6 @@ namespace Contrib.KubeClient.CustomResources
     public class CustomResourceClient<TResource> : KubeResourceClient, ICustomResourceClient<TResource>
         where TResource : CustomResource
     {
-        private readonly TimeSpan _timeout;
         protected CustomResourceDefinition<TResource> Definition { get; }
 
         /// <summary>
@@ -24,12 +22,10 @@ namespace Contrib.KubeClient.CustomResources
         /// </summary>
         /// <param name="client">The kube api client to be used.</param>
         /// <param name="definition">Information about the custom resource definition to work with.</param>
-        /// <param name="options">The <see cref="KubernetesConfigurationStoreOptions"/> to be used.</param>
-        public CustomResourceClient(IKubeApiClient client, CustomResourceDefinition<TResource> definition, IOptions<KubernetesConfigurationStoreOptions> options)
+        public CustomResourceClient(IKubeApiClient client, CustomResourceDefinition<TResource> definition)
             : base(client)
         {
             Definition = definition;
-            _timeout = options.Value.WatchTimeout;
         }
 
         public virtual IObservable<IResourceEventV1<TResource>> Watch(string @namespace = "", string resourceVersionOffset = "0")
@@ -37,7 +33,7 @@ namespace Contrib.KubeClient.CustomResources
             var httpRequest = CreateBaseRequest(@namespace)
                              .WithQueryParameter("watch", true)
                              .WithQueryParameter("resourceVersion", resourceVersionOffset)
-                             .WithQueryParameter("timeoutSeconds", _timeout.TotalSeconds);
+                             .WithQueryParameter("timeoutSeconds", TimeSpan.FromMinutes(5));
 
             return ObserveEvents<TResource>(httpRequest, $"watching {Definition.PluralName} in {@namespace}");
         }
