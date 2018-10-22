@@ -28,12 +28,17 @@ namespace Contrib.KubeClient.CustomResources
             Definition = definition;
         }
 
+        /// <summary>
+        /// The timeout for watching kubernetes event streams, after which the stream will be closed automatically.
+        /// </summary>
+        protected virtual TimeSpan WatchTimeout => TimeSpan.FromMinutes(5);
+
         public virtual IObservable<IResourceEventV1<TResource>> Watch(string @namespace = "", string resourceVersionOffset = "0")
         {
             var httpRequest = CreateBaseRequest(@namespace)
                              .WithQueryParameter("watch", true)
                              .WithQueryParameter("resourceVersion", resourceVersionOffset)
-                             .WithQueryParameter("timeoutSeconds", TimeSpan.FromMinutes(5));
+                             .WithQueryParameter("timeoutSeconds", WatchTimeout.TotalSeconds);
 
             return ObserveEvents<TResource>(httpRequest, $"watching {Definition.PluralName} in {@namespace}");
         }
