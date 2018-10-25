@@ -4,7 +4,10 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Contrib.KubeClient.CustomResources
@@ -13,7 +16,7 @@ namespace Contrib.KubeClient.CustomResources
     /// Base class for building classes that aggregate and debounce events from one more <see cref="ICustomResourceWatcher"/>s.
     /// </summary>
     [PublicAPI]
-    public abstract class WatcherAggregatorBase : IDisposable
+    public abstract class WatcherAggregatorBase : IHostedService, IDisposable
     {
         private IDisposable _subscription;
         protected ILogger Logger { get; }
@@ -56,6 +59,20 @@ namespace Contrib.KubeClient.CustomResources
         /// Called when one or more <see cref="ICustomResourceWatcher.DataChanged"/> events have occured and the debounce duration has elapsed.
         /// </summary>
         protected abstract void OnChanged();
+
+        /// <summary>
+        /// Does nothing. Everything is already wired up in the constructor.
+        /// </summary>
+        public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        /// <summary>
+        /// Stops listening to events.
+        /// </summary>
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            Dispose();
+            return Task.CompletedTask;
+        }
 
         /// <summary>
         /// Stops listening to events.
