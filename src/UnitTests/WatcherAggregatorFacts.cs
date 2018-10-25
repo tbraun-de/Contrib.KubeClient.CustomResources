@@ -38,22 +38,22 @@ namespace Contrib.KubeClient.CustomResources
             _watcherMock.Raise(watcher => watcher.DataChanged += null, 0, EventArgs.Empty);
             _watcherMock2.Raise(watcher => watcher.DataChanged += null, 1, EventArgs.Empty);
 
-            _aggregatorMock.Protected().Verify("OnChanged", Times.Never());
+            _aggregatorMock.Protected().Verify(WatcherAggregatorBase.OnChangedAsyncName, Times.Never());
             _testScheduler.AdvanceBy(_debounceDuration.Ticks);
-            _aggregatorMock.Protected().Verify("OnChanged", Times.Once());
+            _aggregatorMock.Protected().Verify(WatcherAggregatorBase.OnChangedAsyncName, Times.Once());
         }
 
         [Fact]
         public void FailingOnChangedDoesNotStopStream()
         {
-            _aggregatorMock.Protected().Setup("OnChanged").Throws<Exception>();
+            _aggregatorMock.Protected().Setup(WatcherAggregatorBase.OnChangedAsyncName).Throws<Exception>();
 
             _watcherMock.Raise(watcher => watcher.DataChanged += null, 0, EventArgs.Empty);
             _testScheduler.AdvanceBy(_debounceDuration.Ticks);
             _watcherMock.Raise(watcher => watcher.DataChanged += null, 0, EventArgs.Empty);
             _testScheduler.AdvanceBy(_debounceDuration.Ticks);
 
-            _aggregatorMock.Protected().Verify("OnChanged", Times.Exactly(2));
+            _aggregatorMock.Protected().Verify(WatcherAggregatorBase.OnChangedAsyncName, Times.Exactly(2));
         }
     }
 }

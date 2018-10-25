@@ -19,7 +19,7 @@ namespace Contrib.KubeClient.CustomResources
     public abstract class WatcherAggregatorBase : IHostedService, IDisposable
     {
         private IDisposable _subscription;
-        protected ILogger Logger { get; }
+        private readonly ILogger<WatcherAggregatorBase> _logger;
 
         /// <summary>
         /// Starts listening to <see cref="ICustomResourceWatcher.DataChanged"/> events.
@@ -33,7 +33,7 @@ namespace Contrib.KubeClient.CustomResources
                                         ILogger<WatcherAggregatorBase> logger,
                                         IScheduler scheduler = null)
         {
-            Logger = logger;
+            _logger = logger;
             _subscription = watchers
                            .Select(watcher => Observable.FromEventPattern(
                                 addHandler => watcher.DataChanged += addHandler,
@@ -43,22 +43,27 @@ namespace Contrib.KubeClient.CustomResources
                            .Subscribe(OnNext);
         }
 
-        protected virtual void OnNext(EventPattern<object> obj)
+        private void OnNext(EventPattern<object> obj)
         {
-            try
+            Task.Run(async () =>
             {
-                OnChanged();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning(ex, $"Execution of {nameof(OnChanged)} failed");
-            }
+                try
+                {
+                    await OnChangedAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Execution of {nameof(OnChangedAsync)} failed");
+                }
+            }).Wait();
         }
 
         /// <summary>
         /// Called when one or more <see cref="ICustomResourceWatcher.DataChanged"/> events have occured and the debounce duration has elapsed.
         /// </summary>
-        protected abstract void OnChanged();
+        protected abstract Task OnChangedAsync();
+
+        internal const string OnChangedAsyncName = nameof(OnChangedAsync);
 
         /// <summary>
         /// Does nothing. Everything is already wired up in the constructor.
