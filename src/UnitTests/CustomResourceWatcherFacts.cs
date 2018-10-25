@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Reactive.Subjects;
+using System.Threading;
 using FluentAssertions;
 using HTTPlease;
 using IdentityServer4.Models;
@@ -26,7 +27,7 @@ namespace Contrib.KubeClient.CustomResources
                                .Returns(_resourceSubject)
                                .Returns(new Subject<IResourceEventV1<CustomResource<Client>>>());
             _watcher = new TestResourceWatcher(_resourceClientMock.Object);
-            _watcher.StartWatching();
+            _watcher.Start();
         }
 
         [Fact]
@@ -74,7 +75,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void RaisesConnectionErrorEvent()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             _resourceSubject.OnError(new Exception());
 
@@ -84,7 +85,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void RaisesDataChangedEvent()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "1", resourceVersion: "1"));
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "1", resourceVersion: "2"));
@@ -96,7 +97,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void RaisesDataChangedEventOnCacheInvalidation()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             _resourceSubject.OnError(new HttpRequestException<StatusV1>(HttpStatusCode.Gone, new StatusV1()));
 
@@ -106,7 +107,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void DoesNotRaiseDataChangedEventWhenNothingChanged()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "1", resourceVersion: "1"));
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "1", resourceVersion: "2"));
@@ -118,7 +119,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void ResubscribesOnError()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             _resourceSubject.OnError(new Exception());
 
@@ -128,7 +129,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void ResubscribesOnCompletion()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             _resourceSubject.OnCompleted();
 
@@ -136,11 +137,10 @@ namespace Contrib.KubeClient.CustomResources
         }
 
         [Fact]
-        public void DoesNotResubscribeAfterDisposal()
+        public void DoesNotResubscribeAfterStop()
         {
-            _watcher.StartWatching();
-
-            _watcher.Dispose();
+            _watcher.Start();
+            _watcher.Stop();
             _resourceSubject.OnCompleted();
 
             _resourceClientMock.Verify(mock => mock.Watch(It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(1));
@@ -149,7 +149,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void PassesLastResourceVersionOnReconnect()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "4711", resourceVersion: "35"));
 
             _resourceSubject.OnError(new Exception());
@@ -160,7 +160,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void DropsCacheWhenResourceIsGone()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "4711", resourceVersion: "35"));
 
             _resourceSubject.OnError(new HttpRequestException<StatusV1>(HttpStatusCode.Gone, new StatusV1()));
@@ -171,7 +171,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void DropsResourceEventIfOlderThanLastKnown()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "resource", resourceVersion: "10"));
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "resource", resourceVersion: "12"));
@@ -183,7 +183,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void DoesNotDropResourceEventIfVersionIsSmallerButDifferentResource()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "resource", resourceVersion: "10"));
             _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "resource", resourceVersion: "12"));
@@ -196,7 +196,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void ReceivingErroneousResourceEventDoesNotThrow()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             Action receivingErroneousResourceEvent = () => _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Error, uid: "resource", resourceVersion: "1"));
 
@@ -206,7 +206,7 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public void ReceivingUnknownResourceEventTypeThrowsArgumentOutOfRangeException()
         {
-            _watcher.StartWatching();
+            _watcher.Start();
 
             Action receivingUnknownResourceEventType = () => _resourceSubject.OnNext(CreateResourceEvent((ResourceEventType)(-1), uid: "resource", resourceVersion: "1"));
 

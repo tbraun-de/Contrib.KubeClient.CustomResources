@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using HTTPlease;
 using JetBrains.Annotations;
 using KubeClient.Models;
@@ -44,10 +45,12 @@ namespace Contrib.KubeClient.CustomResources
 
         public bool IsActive => _subscription != null;
 
-        public virtual void StartWatching()
+        public Task StartAsync(CancellationToken cancellationToken)
         {
             if (_subscription == null)
                 Subscribe();
+
+            return Task.CompletedTask;
         }
 
         private void Subscribe()
@@ -168,10 +171,12 @@ namespace Contrib.KubeClient.CustomResources
             return existingResource == null || parsedResourcedVersion > long.Parse(existingResource.Metadata.ResourceVersion);
         }
 
-        public virtual void Dispose()
+        public Task StopAsync(CancellationToken cancellationToken)
         {
             _cancellationTokenSource?.Cancel();
             DisposeSubscriptions();
+
+            return Task.CompletedTask;
         }
 
         [ExcludeFromCodeCoverage]

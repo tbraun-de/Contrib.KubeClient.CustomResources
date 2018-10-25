@@ -1,4 +1,3 @@
-using System;
 using JetBrains.Annotations;
 using KubeClient;
 using Microsoft.Extensions.Configuration;
@@ -7,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Contrib.KubeClient.CustomResources
 {
     [PublicAPI]
-    public static class DependencyInjectionExtensions
+    public static class ServiceCollectionExtensions
     {
         /// <summary>
         /// Add a <see cref="KubeApiClient" /> to the service collection. Automatically uses a pod service account if no API endpoint is configured.
@@ -49,27 +48,5 @@ namespace Contrib.KubeClient.CustomResources
                        .AddSingleton(new CustomResourceNamespace<TResource>(@namespace))
                        .AddSingleton<ICustomResourceWatcher<TResource>, CustomResourceWatcher<TResource>>()
                        .AddSingleton<ICustomResourceWatcher>(provider => provider.GetRequiredService<ICustomResourceWatcher<TResource>>());
-
-        /// <summary>
-        /// Starts watching for changes in an <see cref="ICustomResourceWatcher"/> registered with <see cref="AddCustomResourceWatcher{TResource}"/>.
-        /// </summary>
-        /// <typeparam name="TResource">The Kubernetes Custom Resource DTO type.</typeparam>
-        public static IServiceProvider UseCustomResourceWatcher<TResource>(this IServiceProvider provider)
-            where TResource : CustomResource
-        {
-            provider.GetRequiredService<ICustomResourceWatcher<TResource>>().StartWatching();
-            return provider;
-        }
-
-        /// <summary>
-        /// Instructs all resource watchers to start.
-        /// </summary>
-        public static IServiceProvider UseCustomResourceWatchers(this IServiceProvider provider)
-        {
-            foreach (ICustomResourceWatcher watcher in provider.GetServices<ICustomResourceWatcher>())
-                watcher.StartWatching();
-
-            return provider;
-        }
     }
 }

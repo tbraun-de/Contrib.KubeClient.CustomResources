@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.Extensions.Hosting;
 
 namespace Contrib.KubeClient.CustomResources
 {
     /// <summary>
     /// Watches Kubernetes Custom Resources for changes.
     /// </summary>
-    public interface ICustomResourceWatcher : IDisposable
+    public interface ICustomResourceWatcher : IHostedService
     {
         /// <summary>
         /// Triggered whenever the connection to the KubeApi is closed.
@@ -27,11 +28,6 @@ namespace Contrib.KubeClient.CustomResources
         /// Indicates whether the resource watcher is watching or not.
         /// </summary>
         bool IsActive { get; }
-
-        /// <summary>
-        /// Starts watching for changes to the resource collection. Stop by calling <see cref="IDisposable.Dispose"/>.
-        /// </summary>
-        void StartWatching();
     }
 
     /// <summary>

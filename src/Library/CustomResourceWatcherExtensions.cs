@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 
@@ -9,6 +10,18 @@ namespace Contrib.KubeClient.CustomResources
     [PublicAPI]
     public static class CustomResourceWatcherExtensions
     {
+        /// <summary>
+        /// Starts watching for changes to the resource collection. Stop by calling <see cref="Stop"/>.
+        /// </summary>
+        public static void Start(this ICustomResourceWatcher watcher)
+            => watcher.StartAsync(CancellationToken.None).Wait();
+
+        /// <summary>
+        /// Stops watching for changes to the resource collection.
+        /// </summary>
+        public static void Stop(this ICustomResourceWatcher watcher)
+            => watcher.StopAsync(CancellationToken.None).Wait();
+
         /// <summary>
         /// Gets all resources.
         /// </summary>
