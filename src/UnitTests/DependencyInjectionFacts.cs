@@ -2,16 +2,17 @@ using System.Collections.Generic;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    public class DependencyInjectionExtensionsFacts
+    public class DependencyInjectionFacts
     {
         private readonly ServiceProvider _provider;
 
-        public DependencyInjectionExtensionsFacts()
+        public DependencyInjectionFacts()
         {
             _provider = new ServiceCollection()
                        .AddLogging(builder => builder.AddConsole())
@@ -40,6 +41,14 @@ namespace Contrib.KubeClient.CustomResources
         public void CanResolveListOfWatchers()
         {
             _provider.GetServices<ICustomResourceWatcher>().Should().BeEquivalentTo(
+                _provider.GetRequiredService<ICustomResourceWatcher<CustomResource<string>>>(),
+                _provider.GetRequiredService<ICustomResourceWatcher<CustomResource<int>>>());
+        }
+
+        [Fact]
+        public void CanResolveListOfHostedServices()
+        {
+            _provider.GetServices<IHostedService>().Should().BeEquivalentTo(
                 _provider.GetRequiredService<ICustomResourceWatcher<CustomResource<string>>>(),
                 _provider.GetRequiredService<ICustomResourceWatcher<CustomResource<int>>>());
         }

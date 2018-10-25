@@ -2,6 +2,7 @@ using JetBrains.Annotations;
 using KubeClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -47,6 +48,7 @@ namespace Contrib.KubeClient.CustomResources
             => services.AddCustomResourceClient(definition)
                        .AddSingleton(new CustomResourceNamespace<TResource>(@namespace))
                        .AddSingleton<ICustomResourceWatcher<TResource>, CustomResourceWatcher<TResource>>()
-                       .AddSingleton<ICustomResourceWatcher>(provider => provider.GetRequiredService<ICustomResourceWatcher<TResource>>());
+                       .AddSingleton<ICustomResourceWatcher>(provider => provider.GetRequiredService<ICustomResourceWatcher<TResource>>())
+                       .AddSingleton<IHostedService>(provider => provider.GetRequiredService<ICustomResourceWatcher<TResource>>());
     }
 }
