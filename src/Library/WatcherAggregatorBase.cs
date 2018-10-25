@@ -15,36 +15,28 @@ namespace Contrib.KubeClient.CustomResources
     [PublicAPI]
     public abstract class WatcherAggregatorBase : IDisposable
     {
-        private readonly IScheduler _scheduler;
         private IDisposable _subscription;
+        protected ILogger Logger { get; }
 
-        protected WatcherAggregatorBase(ILogger<WatcherAggregatorBase> logger,
+        /// <summary>
+        /// Starts listening to <see cref="ICustomResourceWatcher.DataChanged"/> events.
+        /// </summary>
+        /// <param name="watchers">The watchers to get events from.</param>
+        /// <param name="debounceDuration">The minimum amount of time to wait before reacting to events.</param>
+        /// <param name="logger">Used to log problems handling events.</param>
+        /// <param name="scheduler">RX scheduler; leave <c>null</c> for default.</param>
+        protected WatcherAggregatorBase(IEnumerable<ICustomResourceWatcher> watchers,
                                         TimeSpan debounceDuration,
-                                        IEnumerable<ICustomResourceWatcher> watchers,
+                                        ILogger<WatcherAggregatorBase> logger,
                                         IScheduler scheduler = null)
         {
             Logger = logger;
-            DebounceDuration = debounceDuration;
-            Watchers = watchers;
-            _scheduler = scheduler ?? Scheduler.Default;
-
-            Subscribe();
-        }
-
-        protected ILogger Logger { get; }
-        protected TimeSpan DebounceDuration { get; }
-        protected IEnumerable<ICustomResourceWatcher> Watchers { get; }
-
-        protected void Subscribe()
-        {
-            _subscription?.Dispose();
-
-            var observables = Watchers.Select(watcher => Observable.FromEventPattern(addHandler => watcher.DataChanged += addHandler,
-                                                                                     removeHandler => watcher.DataChanged -= removeHandler));
-
-            _subscription = observables
+            _subscription = watchers
+                           .Select(watcher => Observable.FromEventPattern(
+                                addHandler => watcher.DataChanged += addHandler,
+                                removeHandler => watcher.DataChanged -= removeHandler))
                            .Merge()
-                           .Throttle(DebounceDuration, _scheduler)
+                           .Throttle(debounceDuration, scheduler ?? Scheduler.Default)
                            .Subscribe(OnNext);
         }
 
@@ -60,8 +52,14 @@ namespace Contrib.KubeClient.CustomResources
             }
         }
 
+        /// <summary>
+        /// Called when one or more <see cref="ICustomResourceWatcher.DataChanged"/> events have occured and the debounce duration has elapsed.
+        /// </summary>
         protected abstract void OnChanged();
 
-        public void Dispose() => _subscription?.Dispose();
+        /// <summary>
+        /// Stops listening to events.
+        /// </summary>
+        public void Dispose() => _subscription.Dispose();
     }
 }

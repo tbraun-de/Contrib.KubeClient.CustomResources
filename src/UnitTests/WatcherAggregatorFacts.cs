@@ -20,9 +20,9 @@ namespace Contrib.KubeClient.CustomResources
         {
             _aggregatorMock = new Mock<WatcherAggregatorBase>(
                 MockBehavior.Default,
-                new Logger<WatcherAggregatorBase>(new LoggerFactory()),
-                _debounceDuration,
                 new[] {_watcherMock.Object, _watcherMock2.Object},
+                _debounceDuration,
+                new Logger<WatcherAggregatorBase>(new LoggerFactory()),
                 _testScheduler)
             {
                 CallBase = true
