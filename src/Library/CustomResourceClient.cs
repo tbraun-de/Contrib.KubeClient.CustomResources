@@ -2,10 +2,14 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using HTTPlease;
+using HTTPlease.Formatters.Json;
 using KubeClient;
 using KubeClient.Models;
 using KubeClient.ResourceClients;
 using Microsoft.AspNetCore.JsonPatch;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -91,7 +95,18 @@ namespace Contrib.KubeClient.CustomResources
 
         private HttpRequest CreateBaseRequest(string @namespace)
         {
-            var httpRequest = KubeRequest.Create($"/apis/{_crd.ApiVersion}");
+            // TODO: Once KubeClient uses Camel-Case resolver by default, replace the block below with:
+            // var httpRequest = KubeRequest.Create($"/apis/{_crd.ApiVersion}");
+            var jsonFormatter = new JsonFormatter
+            {
+                SerializerSettings = new JsonSerializerSettings
+                {
+                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                    Converters = {new StringEnumConverter()}
+                },
+                SupportedMediaTypes = {PatchMediaType, MergePatchMediaType}
+            };
+            var httpRequest = HttpRequest.Create($"/apis/{_crd.ApiVersion}").ExpectJson().WithFormatter(jsonFormatter);
 
             if (!string.IsNullOrWhiteSpace(@namespace))
                 httpRequest = httpRequest.WithRelativeUri($"namespaces/{@namespace}/");
