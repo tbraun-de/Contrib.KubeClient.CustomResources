@@ -7,12 +7,12 @@ using Xunit;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    public class CustomResourceExtensionsFacts : IDisposable
+    public class CustomResourceClientRealizeStateFacts : IDisposable
     {
         private readonly Mock<ICustomResourceClient<Mock1Resource>> _clientMock = new Mock<ICustomResourceClient<Mock1Resource>>();
         private readonly ICustomResourceClient<Mock1Resource> _client;
 
-        public CustomResourceExtensionsFacts()
+        public CustomResourceClientRealizeStateFacts()
         {
             _client = _clientMock.Object;
         }
