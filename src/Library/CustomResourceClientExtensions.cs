@@ -27,7 +27,7 @@ namespace Contrib.KubeClient.CustomResources
 
             foreach (var resource in desired)
             {
-                var existingResource = existing.FirstOrDefault(resource.NameMatch);
+                var existingResource = existing.FirstOrDefault(resource.NameEquals);
 
                 if (existingResource == null)
                     await client.CreateAsync(resource, cancellationToken);
@@ -43,7 +43,7 @@ namespace Contrib.KubeClient.CustomResources
             => a.Metadata.Name == b.Metadata.Name
             && (a.Metadata.Namespace ?? "") == (b.Metadata.Namespace ?? "");
 
-        private static bool DoesNotContain(this IEnumerable<KubeResourceV1> list, KubeResourceV1 element)
-            => !list.Any(element.NameMatch);
+        private static bool DoesNotContain(this IEnumerable<CustomResource> list, CustomResource element)
+            => !list.Any(element.NameEquals);
     }
 }

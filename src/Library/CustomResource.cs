@@ -1,3 +1,4 @@
+using System;
 using JetBrains.Annotations;
 using KubeClient.Models;
 using Newtonsoft.Json;
@@ -39,7 +40,16 @@ namespace Contrib.KubeClient.CustomResources
 
         public override bool Equals(object obj)
             => obj is CustomResource other
-            && this.NameMatch(other);
+            && NameEquals(other);
+
+        /// <summary>
+        /// Returns <c>true</c> if the name and namespace of the other resource equal those of this resource.
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool NameEquals(KubeResourceV1 other)
+            => Metadata.Name == other.Metadata.Name
+            && (Metadata.Namespace ?? "") == (other.Metadata.Namespace ?? "");
 
         public override int GetHashCode()
         {
@@ -75,7 +85,7 @@ namespace Contrib.KubeClient.CustomResources
 
         public override bool Equals(object obj)
             => obj is CustomResource<TSpec, TStatus> other
-            && this.NameMatch(other)
+            && this.NameEquals(other)
             && SpecEquals(other.Spec);
 
         protected virtual bool SpecEquals(TSpec other)
