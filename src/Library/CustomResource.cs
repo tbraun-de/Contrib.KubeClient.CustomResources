@@ -1,4 +1,3 @@
-using System;
 using JetBrains.Annotations;
 using KubeClient.Models;
 using Newtonsoft.Json;
@@ -10,7 +9,7 @@ namespace Contrib.KubeClient.CustomResources
     /// Base class for DTOs for Kubernetes Custom Resources.
     /// </summary>
     [PublicAPI]
-    public abstract class CustomResource : KubeResourceV1, IEquatable<CustomResource>
+    public abstract class CustomResource : KubeResourceV1
     {
         [JsonIgnore, YamlIgnore]
         public CustomResourceDefinition Definition { get; }
@@ -38,12 +37,9 @@ namespace Contrib.KubeClient.CustomResources
                 ? $"[cluster].{Metadata.Name}"
                 : $"{Metadata.Namespace}.{Metadata.Name}";
 
-        public bool Equals(CustomResource other)
-            => other != null
-            && Metadata.Namespace == other.Metadata.Namespace
-            && Metadata.Name == other.Metadata.Name;
-
-        public override bool Equals(object obj) => obj is CustomResource other && Equals(other);
+        public override bool Equals(object obj)
+            => obj is CustomResource other
+            && this.NameMatch(other);
 
         public override int GetHashCode()
         {
@@ -59,7 +55,7 @@ namespace Contrib.KubeClient.CustomResources
     /// <summary>
     /// Base class for DTOs for Kubernetes Custom Resources with a "spec" and a "status" field.
     /// </summary>
-    public abstract class CustomResource<TSpec, TStatus> : CustomResource, IEquatable<CustomResource<TSpec, TStatus>>
+    public abstract class CustomResource<TSpec, TStatus> : CustomResource
     {
         [JsonProperty("spec"), YamlMember(Alias = "spec")]
         public TSpec Spec { get; set; }
@@ -77,12 +73,13 @@ namespace Contrib.KubeClient.CustomResources
             Spec = spec;
         }
 
-        public bool Equals(CustomResource<TSpec, TStatus> other)
-            => other != null
-            && base.Equals(other)
-            && Equals(Spec, other.Spec);
+        public override bool Equals(object obj)
+            => obj is CustomResource<TSpec, TStatus> other
+            && this.NameMatch(other)
+            && SpecEquals(other.Spec);
 
-        public override bool Equals(object obj) => obj is CustomResource<TSpec, TStatus> other && Equals(other);
+        protected virtual bool SpecEquals(TSpec other)
+            => Equals(Spec, other);
 
         public override int GetHashCode()
         {
