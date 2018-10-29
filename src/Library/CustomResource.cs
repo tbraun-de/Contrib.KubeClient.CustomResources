@@ -71,18 +71,8 @@ namespace Contrib.KubeClient.CustomResources
             : base(definition)
         {}
 
-        protected CustomResource(CustomResourceDefinition definition, string @namespace, string name)
-            : base(definition, @namespace, name)
-        {}
-
         protected CustomResource(CustomResourceDefinition definition, string @namespace, string name, TSpec spec)
             : base(definition, @namespace, name)
-        {
-            Spec = spec;
-        }
-
-        protected CustomResource(CustomResourceDefinition definition, TSpec spec)
-            : base(definition)
         {
             Spec = spec;
         }
@@ -114,20 +104,8 @@ namespace Contrib.KubeClient.CustomResources
             : base(definition)
         {}
 
-        protected CustomResource(CustomResourceDefinition definition, string @namespace, string name)
-            : base(definition, @namespace, name)
-        {}
-
         protected CustomResource(CustomResourceDefinition definition, string @namespace, string name, TSpec spec)
-            : base(definition, @namespace, name)
-        {
-            Spec = spec;
-        }
-
-        protected CustomResource(CustomResourceDefinition definition, TSpec spec)
-            : base(definition)
-        {
-            Spec = spec;
-        }
+            : base(definition, @namespace, name, spec)
+        {}
     }
 }
