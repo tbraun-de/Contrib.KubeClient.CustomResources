@@ -10,7 +10,7 @@ namespace Contrib.KubeClient.CustomResources
     /// </summary>
     /// <typeparam name="TResource">The Kubernetes Custom Resource DTO type.</typeparam>
     public interface ICustomResourceClient<TResource>
-        where TResource: CustomResource
+        where TResource : CustomResource
     {
         /// <summary>
         /// Watches for events related to this type of resource.

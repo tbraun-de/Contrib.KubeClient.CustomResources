@@ -13,19 +13,18 @@ namespace Contrib.KubeClient.CustomResources
     /// </summary>
     /// <typeparam name="TResource">The Kubernetes Custom Resource DTO type.</typeparam>
     public class CustomResourceClient<TResource> : KubeResourceClient, ICustomResourceClient<TResource>
-        where TResource : CustomResource
+        where TResource : CustomResource, new()
     {
-        protected CustomResourceDefinition<TResource> Definition { get; }
+        private readonly CustomResourceDefinition _crd;
 
         /// <summary>
         /// Creates a Kubernetes Custom Resources client.
         /// </summary>
         /// <param name="client">The kube api client to be used.</param>
-        /// <param name="definition">Information about the custom resource definition to work with.</param>
-        public CustomResourceClient(IKubeApiClient client, CustomResourceDefinition<TResource> definition)
+        public CustomResourceClient(IKubeApiClient client)
             : base(client)
         {
-            Definition = definition;
+            _crd = new TResource().Definition;
         }
 
         /// <summary>
@@ -40,7 +39,7 @@ namespace Contrib.KubeClient.CustomResources
                              .WithQueryParameter("resourceVersion", resourceVersionOffset)
                              .WithQueryParameter("timeoutSeconds", WatchTimeout.TotalSeconds);
 
-            return ObserveEvents<TResource>(httpRequest, $"watching {Definition.PluralName} in {@namespace}");
+            return ObserveEvents<TResource>(httpRequest, $"watching {_crd.PluralName} in {@namespace}");
         }
 
         public async Task<CustomResourceList<TResource>> ListAsync(string labelSelector = null, string @namespace = null, CancellationToken cancellationToken = default)
@@ -90,12 +89,12 @@ namespace Contrib.KubeClient.CustomResources
 
         private HttpRequest CreateBaseRequest(string @namespace)
         {
-            var httpRequest = KubeRequest.Create($"/apis/{Definition.ApiVersion}");
+            var httpRequest = KubeRequest.Create($"/apis/{_crd.ApiVersion}");
 
             if (!string.IsNullOrWhiteSpace(@namespace))
                 httpRequest = httpRequest.WithRelativeUri($"namespaces/{@namespace}/");
 
-            return httpRequest.WithRelativeUri(Definition.PluralName);
+            return httpRequest.WithRelativeUri(_crd.PluralName);
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using JetBrains.Annotations;
 using KubeClient.Models;
 using Newtonsoft.Json;
+using YamlDotNet.Serialization;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -9,12 +10,20 @@ namespace Contrib.KubeClient.CustomResources
     /// Base class for DTOs for Kubernetes Custom Resources.
     /// </summary>
     [PublicAPI]
-    public class CustomResource : KubeResourceV1, IEquatable<CustomResource>
+    public abstract class CustomResource : KubeResourceV1, IEquatable<CustomResource>
     {
-        public CustomResource()
-        {}
+        [JsonIgnore, YamlIgnore]
+        public CustomResourceDefinition Definition { get; }
 
-        public CustomResource(string @namespace, string name)
+        protected CustomResource(CustomResourceDefinition definition)
+        {
+            Definition = definition;
+            ApiVersion = Definition.ApiVersion;
+            Kind = Definition.Kind;
+        }
+
+        protected CustomResource(CustomResourceDefinition definition, string @namespace, string name)
+            : this(definition)
         {
             Metadata = new ObjectMetaV1
             {
@@ -26,8 +35,8 @@ namespace Contrib.KubeClient.CustomResources
         [JsonIgnore]
         public string GlobalName
             => string.IsNullOrWhiteSpace(Metadata.Namespace)
-                   ? $"[cluster].{Metadata.Name}"
-                   : $"{Metadata.Namespace}.{Metadata.Name}";
+                ? $"[cluster].{Metadata.Name}"
+                : $"{Metadata.Namespace}.{Metadata.Name}";
 
         public bool Equals(CustomResource other)
             => other != null
@@ -50,25 +59,30 @@ namespace Contrib.KubeClient.CustomResources
     /// <summary>
     /// Base class for DTOs for Kubernetes Custom Resources with a "spec" and a "status" field.
     /// </summary>
-    public class CustomResource<TSpec, TStatus> : CustomResource, IEquatable<CustomResource<TSpec, TStatus>>
+    public abstract class CustomResource<TSpec, TStatus> : CustomResource, IEquatable<CustomResource<TSpec, TStatus>>
     {
+        [JsonProperty("spec"), YamlMember(Alias = "spec")]
         public TSpec Spec { get; set; }
+
+        [JsonProperty("status"), YamlMember(Alias = "status")]
         public TStatus Status { get; set; }
 
-        public CustomResource()
+        protected CustomResource(CustomResourceDefinition definition)
+            : base(definition)
         {}
 
-        public CustomResource(string @namespace, string name)
-            : base(@namespace, name)
+        protected CustomResource(CustomResourceDefinition definition, string @namespace, string name)
+            : base(definition, @namespace, name)
         {}
 
-        public CustomResource(string @namespace, string name, TSpec spec)
-            : base(@namespace, name)
+        protected CustomResource(CustomResourceDefinition definition, string @namespace, string name, TSpec spec)
+            : base(definition, @namespace, name)
         {
             Spec = spec;
         }
 
-        public CustomResource(TSpec spec)
+        protected CustomResource(CustomResourceDefinition definition, TSpec spec)
+            : base(definition)
         {
             Spec = spec;
         }
@@ -94,18 +108,26 @@ namespace Contrib.KubeClient.CustomResources
     /// <summary>
     /// Base class for DTOs for Kubernetes Custom Resources with a "spec" and a "status" field.
     /// </summary>
-    public class CustomResource<TSpec> : CustomResource<TSpec, StatusV1>
+    public abstract class CustomResource<TSpec> : CustomResource<TSpec, StatusV1>
     {
-        public CustomResource()
+        protected CustomResource(CustomResourceDefinition definition)
+            : base(definition)
         {}
 
-        public CustomResource(string @namespace, string name) : base(@namespace, name)
+        protected CustomResource(CustomResourceDefinition definition, string @namespace, string name)
+            : base(definition, @namespace, name)
         {}
 
-        public CustomResource(string @namespace, string name, TSpec spec) : base(@namespace, name, spec)
-        {}
+        protected CustomResource(CustomResourceDefinition definition, string @namespace, string name, TSpec spec)
+            : base(definition, @namespace, name)
+        {
+            Spec = spec;
+        }
 
-        public CustomResource(TSpec spec) : base(spec)
-        {}
+        protected CustomResource(CustomResourceDefinition definition, TSpec spec)
+            : base(definition)
+        {
+            Spec = spec;
+        }
     }
 }

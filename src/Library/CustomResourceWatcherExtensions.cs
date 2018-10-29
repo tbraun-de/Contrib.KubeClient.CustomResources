@@ -56,7 +56,7 @@ namespace Contrib.KubeClient.CustomResources
         /// Finds all resources by the given query.
         /// </summary>
         /// <returns>Empty enumerable if nothing found.</returns>
-        public static Task<IEnumerable<TResource>> FindAsync<TResource>(this ICustomResourceWatcher<TResource> watcher, Func<TResource, bool> query) where TResource: CustomResource
+        public static Task<IEnumerable<TResource>> FindAsync<TResource>(this ICustomResourceWatcher<TResource> watcher, Func<TResource, bool> query) where TResource : CustomResource
             => Task.FromResult(watcher.RawResources.Where(query));
 
         /// <summary>

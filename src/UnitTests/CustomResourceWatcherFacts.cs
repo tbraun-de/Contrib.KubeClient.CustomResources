@@ -2,10 +2,8 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Reactive.Subjects;
-using System.Threading;
 using FluentAssertions;
 using HTTPlease;
-using IdentityServer4.Models;
 using KubeClient.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -16,16 +14,16 @@ namespace Contrib.KubeClient.CustomResources
     public class CustomResourceWatcherFacts
     {
         private readonly TestResourceWatcher _watcher;
-        private readonly Subject<IResourceEventV1<CustomResource<Client>>> _resourceSubject;
-        private readonly Mock<ICustomResourceClient<CustomResource<Client>>> _resourceClientMock;
+        private readonly Subject<IResourceEventV1<Mock1Resource>> _resourceSubject;
+        private readonly Mock<ICustomResourceClient<Mock1Resource>> _resourceClientMock;
 
         public CustomResourceWatcherFacts()
         {
-            _resourceSubject = new Subject<IResourceEventV1<CustomResource<Client>>>();
-            _resourceClientMock = new Mock<ICustomResourceClient<CustomResource<Client>>>();
+            _resourceSubject = new Subject<IResourceEventV1<Mock1Resource>>();
+            _resourceClientMock = new Mock<ICustomResourceClient<Mock1Resource>>();
             _resourceClientMock.SetupSequence(mock => mock.Watch(It.IsAny<string>(), It.IsAny<string>()))
                                .Returns(_resourceSubject)
-                               .Returns(new Subject<IResourceEventV1<CustomResource<Client>>>());
+                               .Returns(new Subject<IResourceEventV1<Mock1Resource>>());
             _watcher = new TestResourceWatcher(_resourceClientMock.Object);
             _watcher.Start();
         }
@@ -45,7 +43,7 @@ namespace Contrib.KubeClient.CustomResources
         {
             var addedResource = CreateResourceEvent(ResourceEventType.Added, "expectedClientId", resourceVersion: "4711");
             var modifiedResource = CreateResourceEvent(ResourceEventType.Modified, "expectedClientId", resourceVersion: "4712");
-            modifiedResource.Resource.Spec.ClientName = "clientName";
+            modifiedResource.Resource.Spec = "clientName";
             _resourceSubject.OnNext(addedResource);
 
             _resourceSubject.OnNext(modifiedResource);
@@ -213,11 +211,11 @@ namespace Contrib.KubeClient.CustomResources
             receivingUnknownResourceEventType.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        private static ResourceEventV1<CustomResource<Client>> CreateResourceEvent(ResourceEventType eventType, string uid, string resourceVersion)
-            => new ResourceEventV1<CustomResource<Client>>
+        private static ResourceEventV1<Mock1Resource> CreateResourceEvent(ResourceEventType eventType, string uid, string resourceVersion)
+            => new ResourceEventV1<Mock1Resource>
             {
                 EventType = eventType,
-                Resource = new CustomResource<Client>
+                Resource = new Mock1Resource
                 {
                     Metadata = new ObjectMetaV1
                     {
@@ -226,14 +224,14 @@ namespace Contrib.KubeClient.CustomResources
                         ResourceVersion = resourceVersion,
                         Uid = uid
                     },
-                    Spec = new Client {ClientId = uid}
+                    Spec = uid
                 }
             };
 
-        private class TestResourceWatcher : CustomResourceWatcher<CustomResource<Client>>
+        private class TestResourceWatcher : CustomResourceWatcher<Mock1Resource>
         {
-            public TestResourceWatcher(ICustomResourceClient<CustomResource<Client>> client)
-                : base(new Logger<CustomResourceWatcher<CustomResource<Client>>>(new LoggerFactory()), client, new CustomResourceDefinition<CustomResource<Client>>(apiVersion: "stable.contrib.identityserver.io/v1", pluralName: "identityclients"), new CustomResourceNamespace<CustomResource<Client>>(""))
+            public TestResourceWatcher(ICustomResourceClient<Mock1Resource> client)
+                : base(new Logger<CustomResourceWatcher<Mock1Resource>>(new LoggerFactory()), client, new CustomResourceNamespace<Mock1Resource>(""))
             {
                 Connected += (sender, args) => ConnectedTriggered = true;
                 ConnectionError += (sender, args) => ConnectionErrorTriggered = true;

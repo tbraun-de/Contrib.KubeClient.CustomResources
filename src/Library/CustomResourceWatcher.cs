@@ -18,21 +18,21 @@ namespace Contrib.KubeClient.CustomResources
     /// </summary>
     /// <typeparam name="TResource">The Kubernetes Custom Resource DTO type.</typeparam>
     public class CustomResourceWatcher<TResource> : ICustomResourceWatcher<TResource>
-        where TResource : CustomResource
+        where TResource : CustomResource, new()
     {
         private const long resourceVersionNone = 0;
         private readonly Dictionary<string, TResource> _resources = new Dictionary<string, TResource>();
         private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private readonly ILogger<CustomResourceWatcher<TResource>> _logger;
-        private readonly CustomResourceDefinition<TResource> _crd;
+        private readonly CustomResourceDefinition _crd;
         [NotNull] private readonly string _namespace;
         private IDisposable _subscription;
         private long _lastSeenResourceVersion = resourceVersionNone;
 
-        public CustomResourceWatcher(ILogger<CustomResourceWatcher<TResource>> logger, ICustomResourceClient<TResource> client, CustomResourceDefinition<TResource> crd, CustomResourceNamespace<TResource> @namespace = null)
+        public CustomResourceWatcher(ILogger<CustomResourceWatcher<TResource>> logger, ICustomResourceClient<TResource> client, CustomResourceNamespace<TResource> @namespace = null)
         {
             _logger = logger;
-            _crd = crd;
+            _crd = new TResource().Definition;
             Client = client;
             _namespace = @namespace?.Value ?? "";
         }
