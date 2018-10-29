@@ -45,9 +45,9 @@ namespace Contrib.KubeClient.CustomResources
         /// <param name="resource">The new desired state of the resource.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The current state for the updated resource.</returns>
-        public static Task UpdateAsync<TResource>(this ICustomResourceClient<TResource> client,
-                                                  TResource resource,
-                                                  CancellationToken cancellationToken = default)
+        public static Task<TResource> UpdateAsync<TResource>(this ICustomResourceClient<TResource> client,
+                                                             TResource resource,
+                                                             CancellationToken cancellationToken = default)
             where TResource : CustomResource, IPatchable<TResource>
             => client.UpdateAsync(resource.Metadata.Name, resource.Patch, resource.Metadata.Namespace, cancellationToken);
 
