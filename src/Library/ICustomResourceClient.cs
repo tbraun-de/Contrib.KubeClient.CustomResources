@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using KubeClient.Models;
+using Microsoft.AspNetCore.JsonPatch;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -40,16 +41,18 @@ namespace Contrib.KubeClient.CustomResources
         /// </summary>
         /// <param name="resource">The resource to create.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A <see cref="CustomResource"/> representing the current state for the newly-created resource.</returns>
+        /// <returns>The current state for the newly-created resource.</returns>
         Task<TResource> CreateAsync(TResource resource, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Updates an existing resource given by <paramref name="resource"/>.
+        /// Updates an existing resource.
         /// </summary>
-        /// <param name="resource">The resource to overwrite.</param>
+        /// <param name="name">The name of the target resource.</param>
+        /// <param name="patchAction">A delegate that customizes the patch operation.</param>
+        /// <param name="namespace">The namespace the resource is located in.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A <see cref="CustomResource"/> representing the current state for the updated resource.</returns>
-        Task<TResource> UpdateAsync(TResource resource, CancellationToken cancellationToken = default);
+        /// <returns>The current state for the updated resource.</returns>
+        Task<TResource> UpdateAsync(string name, Action<JsonPatchDocument<TResource>> patchAction, string @namespace = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deletes an existing resource given by <paramref name="resourceName"/>.
@@ -57,7 +60,7 @@ namespace Contrib.KubeClient.CustomResources
         /// <param name="resourceName">The name of the target resource to delete.</param>
         /// <param name="namespace">The namespace the resource is located in.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A <see cref="CustomResource"/> representing the resource`s most recent state before it was deleted.</returns>
+        /// <returns>The resource`s most recent state before it was deleted.</returns>
         Task<TResource> DeleteAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default);
     }
 }

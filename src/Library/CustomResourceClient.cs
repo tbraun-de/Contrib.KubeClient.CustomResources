@@ -5,6 +5,7 @@ using HTTPlease;
 using KubeClient;
 using KubeClient.Models;
 using KubeClient.ResourceClients;
+using Microsoft.AspNetCore.JsonPatch;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -66,14 +67,15 @@ namespace Contrib.KubeClient.CustomResources
             return await responseMessage.ReadContentAsAsync<TResource, StatusV1>(responseMessage.StatusCode);
         }
 
-        public virtual async Task<TResource> UpdateAsync(TResource resource, CancellationToken cancellationToken = default)
+        public virtual async Task<TResource> UpdateAsync(string name, Action<JsonPatchDocument<TResource>> patchAction, string @namespace = null, CancellationToken cancellationToken = default)
         {
-            if (resource == null) throw new ArgumentNullException(nameof(resource));
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Argument cannot be null, empty, or entirely composed of whitespace: 'name'.", nameof(name));
+            if (patchAction == null)
+                throw new ArgumentNullException(nameof(patchAction));
 
-            var httpRequest = CreateBaseRequest(resource.Metadata.Namespace).WithRelativeUri(resource.Metadata.Name);
-
-            var responseMessage = await Http.PutAsJsonAsync(httpRequest, resource, cancellationToken);
-            return await responseMessage.ReadContentAsAsync<TResource>();
+            var httpRequest = CreateBaseRequest(@namespace).WithRelativeUri(name);
+            return await PatchResource(patchAction, httpRequest, cancellationToken);
         }
 
         public virtual async Task<TResource> DeleteAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default)

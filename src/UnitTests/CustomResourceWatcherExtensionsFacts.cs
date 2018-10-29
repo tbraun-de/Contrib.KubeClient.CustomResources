@@ -23,8 +23,6 @@ namespace Contrib.KubeClient.CustomResources
                                          resource.Metadata.Uid = Guid.NewGuid().ToString("N");
                                          return Task.FromResult(resource);
                                      });
-            customResourceClientMock.Setup(mock => mock.UpdateAsync(It.IsAny<Mock1Resource>(), It.IsAny<CancellationToken>()))
-                                    .Returns<Mock1Resource, CancellationToken>((resource, _) => Task.FromResult(resource));
             customResourceClientMock.Setup(mock => mock.DeleteAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                                     .Returns<string, string, CancellationToken>((name, @namespace, _) => Task.FromResult(new Mock1Resource(name: name, @namespace: @namespace)));
 
