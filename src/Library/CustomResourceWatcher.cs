@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using HTTPlease;
 using JetBrains.Annotations;
+using KubeClient;
 using KubeClient.Models;
 using Microsoft.Extensions.Logging;
 
@@ -61,7 +62,7 @@ namespace Contrib.KubeClient.CustomResources
             DisposeSubscriptions();
             _subscription = Client.Watch(_namespace, _lastSeenResourceVersion.ToString()).Subscribe(OnNext, OnError, OnCompleted);
             Connected?.Invoke(this, EventArgs.Empty);
-            _logger.LogInformation($"Subscribed to {_crd.PluralName}.");
+            _logger.LogInformation($"Subscribed to '{_crd}'.");
         }
 
         private void OnNext(IResourceEventV1<TResource> @event)
@@ -122,15 +123,26 @@ namespace Contrib.KubeClient.CustomResources
 
         private void OnError(Exception exception)
         {
-            _logger.LogError(exception, $"Error occured during watch for custom resource of type {_crd}. Resubscribing...");
-            if (exception is HttpRequestException<StatusV1> requestException)
+            if (IsGone(exception))
             {
-                HandleSubscriptionStatusException(requestException);
+                _resources.Clear();
+                OnDataChanged();
+                _logger.LogDebug("Cleaned resource cache for '{0}' as the last seen resource version ({1}) is gone.", _crd, _lastSeenResourceVersion);
+                _lastSeenResourceVersion = resourceVersionNone;
             }
+            else
+            {
+                _logger.LogError(exception, $"Error occured during watch for custom resource of type {_crd}. Resubscribing...");
+            }
+
             ConnectionError?.Invoke(this, exception);
             Thread.Sleep(1000);
             Subscribe();
         }
+
+        private static bool IsGone(Exception exception)
+            => (exception is KubeClientException clientException && clientException.StatusReason == "Gone")
+            || (exception is HttpRequestException<StatusV1> requestException && requestException.StatusCode == HttpStatusCode.Gone);
 
         private void OnCompleted()
         {
@@ -142,26 +154,11 @@ namespace Contrib.KubeClient.CustomResources
 
         private void OnDataChanged() => DataChanged?.Invoke(this, new EventArgs());
 
-        private void HandleSubscriptionStatusException(HttpRequestException<StatusV1> exception)
-        {
-            if (exception.StatusCode == HttpStatusCode.Gone)
-            {
-                _resources.Clear();
-                OnDataChanged();
-                _logger.LogDebug("Cleaned resource cache for '{0}' as the last seen resource version ({1}) is gone.", _crd, _lastSeenResourceVersion);
-                _lastSeenResourceVersion = resourceVersionNone;
-            }
-            else
-            {
-                _logger.LogWarning(exception, "Got an error from Kube API for resource '{0}': {1}", _crd, exception.Response.Message);
-            }
-        }
-
         private void DisposeSubscriptions()
         {
             _subscription?.Dispose();
             _subscription = null;
-            _logger.LogDebug("Unsubscribed from {0}.", _crd.PluralName);
+            _logger.LogDebug("Unsubscribed from {0}.", _crd);
         }
 
         private bool TryValidateResource(CustomResource resource, out long parsedResourcedVersion)

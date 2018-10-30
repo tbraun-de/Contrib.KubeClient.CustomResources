@@ -44,7 +44,7 @@ namespace Contrib.KubeClient.CustomResources
                              .WithQueryParameter("resourceVersion", resourceVersionOffset)
                              .WithQueryParameter("timeoutSeconds", WatchTimeout.TotalSeconds);
 
-            return ObserveEvents<TResource>(httpRequest, $"watch {_crd.PluralName} in {@namespace}");
+            return ObserveEvents<TResource>(httpRequest, operationDescription: $"watch '{_crd.PluralName}'");
         }
 
         public async Task<CustomResourceList<TResource>> ListAsync(string labelSelector = null, string @namespace = null, CancellationToken cancellationToken = default)
