@@ -95,18 +95,7 @@ namespace Contrib.KubeClient.CustomResources
 
         private HttpRequest CreateBaseRequest(string @namespace)
         {
-            // TODO: Once KubeClient uses Camel-Case resolver by default, replace the block below with:
-            // var httpRequest = KubeRequest.Create($"/apis/{_crd.ApiVersion}");
-            var jsonFormatter = new JsonFormatter
-            {
-                SerializerSettings = new JsonSerializerSettings
-                {
-                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                    Converters = {new StringEnumConverter()}
-                },
-                SupportedMediaTypes = {PatchMediaType, MergePatchMediaType}
-            };
-            var httpRequest = HttpRequest.Create($"/apis/{_crd.ApiVersion}").ExpectJson().WithFormatter(jsonFormatter);
+            var httpRequest = KubeRequest.Create($"/apis/{_crd.ApiVersion}");
 
             if (!string.IsNullOrWhiteSpace(@namespace))
                 httpRequest = httpRequest.WithRelativeUri($"namespaces/{@namespace}/");
