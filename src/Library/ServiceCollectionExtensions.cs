@@ -18,7 +18,10 @@ namespace Contrib.KubeClient.CustomResources
             configuration.Bind(options);
 
             if (options.ApiEndPoint == null)
+            {
                 options = KubeClientOptions.FromPodServiceAccount();
+                configuration.Bind(options);
+            }
 
             services.AddKubeClient(options);
 
