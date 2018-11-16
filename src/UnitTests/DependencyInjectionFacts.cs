@@ -1,6 +1,6 @@
-using System.Collections.Generic;
+using System;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
+using KubeClient;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,7 +17,7 @@ namespace Contrib.KubeClient.CustomResources
             _provider = new ServiceCollection()
                        .AddLogging(builder => builder.AddConsole())
                        .AddOptions()
-                       .AddKubeClient(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string> {["ApiEndPoint"] = "http://example.com/"}).Build())
+                       .AddKubeClient(new KubeClientOptions {ApiEndPoint = new Uri("http://example.com/")})
                        .AddCustomResourceWatcher<Mock1Resource>()
                        .AddCustomResourceWatcher<Mock2Resource>()
                        .BuildServiceProvider();

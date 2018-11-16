@@ -1,6 +1,4 @@
 using JetBrains.Annotations;
-using KubeClient;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -9,25 +7,6 @@ namespace Contrib.KubeClient.CustomResources
     [PublicAPI]
     public static class ServiceCollectionExtensions
     {
-        /// <summary>
-        /// Add a <see cref="KubeApiClient" /> to the service collection. Automatically uses a pod service account if no API endpoint is configured.
-        /// </summary>
-        public static IServiceCollection AddKubeClient(this IServiceCollection services, IConfiguration configuration)
-        {
-            var options = new KubeClientOptions();
-            configuration.Bind(options);
-
-            if (options.ApiEndPoint == null)
-            {
-                options = KubeClientOptions.FromPodServiceAccount();
-                configuration.Bind(options);
-            }
-
-            services.AddKubeClient(options);
-
-            return services;
-        }
-
         /// <summary>
         /// Registers an <see cref="ICustomResourceClient{TResource}"/>.
         /// </summary>
