@@ -1,4 +1,3 @@
-using System;
 using FluentAssertions;
 using KubeClient;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +16,7 @@ namespace Contrib.KubeClient.CustomResources
             _provider = new ServiceCollection()
                        .AddLogging(builder => builder.AddConsole())
                        .AddOptions()
-                       .AddKubeClient(new KubeClientOptions {ApiEndPoint = new Uri("http://example.com/")})
+                       .AddKubeClient(new KubeClientOptions("http://example.com/"))
                        .AddCustomResourceWatcher<Mock1Resource>()
                        .AddCustomResourceWatcher<Mock2Resource>()
                        .BuildServiceProvider();
