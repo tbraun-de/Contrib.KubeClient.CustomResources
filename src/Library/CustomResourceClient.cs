@@ -31,7 +31,8 @@ namespace Contrib.KubeClient.CustomResources
         /// <summary>
         /// The timeout for watching kubernetes event streams, after which the stream will be closed automatically.
         /// </summary>
-        protected virtual TimeSpan WatchTimeout => TimeSpan.FromMinutes(5);
+        /// <remarks>The Kubernetes API stores events for 5 minutes by default. This value should be lower than that to avoid excessive cache rebuilding.</remarks>
+        protected virtual TimeSpan WatchTimeout => TimeSpan.FromMinutes(4);
 
         public virtual IObservable<IResourceEventV1<TResource>> Watch(string @namespace = "", string resourceVersionOffset = "0")
         {
