@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.JsonPatch;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    public class Mock1Resource : CustomResource<string>, IPatchable<Mock1Resource>
+    public class Mock1Resource : CustomResource<string>, IPayloadPatchable<Mock1Resource>
     {
         public new static CustomResourceDefinition Definition { get; } = new CustomResourceDefinition(apiVersion: "example.com/v1", pluralName: "mock1s", kind: "Mock");
 
@@ -14,7 +14,7 @@ namespace Contrib.KubeClient.CustomResources
             : base(Definition, @namespace, name, spec)
         {}
 
-        public void Patch(JsonPatchDocument<Mock1Resource> patch)
+        public void ToPayloadPatch(JsonPatchDocument<Mock1Resource> patch)
             => patch.Replace(x => x.Spec, Spec);
     }
 }

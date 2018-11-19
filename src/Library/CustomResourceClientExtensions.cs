@@ -20,7 +20,7 @@ namespace Contrib.KubeClient.CustomResources
                                                               string labelSelector = null,
                                                               string @namespace = null,
                                                               CancellationToken cancellationToken = default)
-            where TResource : CustomResource, IPatchable<TResource>
+            where TResource : CustomResource, IPayloadPatchable<TResource>
         {
             var existing = await client.ListAsync(labelSelector, @namespace, cancellationToken);
 
@@ -48,8 +48,16 @@ namespace Contrib.KubeClient.CustomResources
         public static Task<TResource> UpdateAsync<TResource>(this ICustomResourceClient<TResource> client,
                                                              TResource resource,
                                                              CancellationToken cancellationToken = default)
-            where TResource : CustomResource, IPatchable<TResource>
-            => client.UpdateAsync(resource.Metadata.Name, resource.Patch, resource.Metadata.Namespace, cancellationToken);
+            where TResource : CustomResource, IPayloadPatchable<TResource>
+            => client.UpdateAsync(
+                resource.Metadata.Name,
+                patch =>
+                {
+                    patch.Replace(x => x.Metadata.Labels, resource.Metadata.Labels);
+                    resource.ToPayloadPatch(patch);
+                },
+                resource.Metadata.Namespace,
+                cancellationToken);
 
         private static bool DoesNotContain(this IEnumerable<CustomResource> list, CustomResource element)
             => !list.Any(element.NameEquals);
