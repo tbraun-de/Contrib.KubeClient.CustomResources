@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using KubeClient.Models;
+using KubeClient.ResourceClients;
 using Microsoft.AspNetCore.JsonPatch;
 
 namespace Contrib.KubeClient.CustomResources
@@ -10,7 +11,7 @@ namespace Contrib.KubeClient.CustomResources
     /// Client for Kubernetes Custom Resources of a specific type.
     /// </summary>
     /// <typeparam name="TResource">The Kubernetes Custom Resource DTO type.</typeparam>
-    public interface ICustomResourceClient<TResource>
+    public interface ICustomResourceClient<TResource> : IKubeResourceClient
         where TResource : CustomResource
     {
         /// <summary>
@@ -45,7 +46,7 @@ namespace Contrib.KubeClient.CustomResources
         Task<TResource> CreateAsync(TResource resource, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Updates an existing resource.
+        /// Updates an existing resource using PATCH.
         /// </summary>
         /// <param name="name">The name of the target resource.</param>
         /// <param name="patchAction">A delegate that customizes the patch operation.</param>
@@ -53,6 +54,14 @@ namespace Contrib.KubeClient.CustomResources
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The current state for the updated resource.</returns>
         Task<TResource> UpdateAsync(string name, Action<JsonPatchDocument<TResource>> patchAction, string @namespace = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Replaces an existing resource using PUT.
+        /// </summary>
+        /// <param name="resource">The resource to replace. Must be an object retrieved using <see cref="ListAsync"/> or <see cref="ReadAsync"/> and then modified.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The current state for the modified resource.</returns>
+        Task<TResource> ReplaceAsync(TResource resource, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Deletes an existing resource given by <paramref name="resourceName"/>.

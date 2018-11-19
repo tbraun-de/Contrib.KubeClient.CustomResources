@@ -63,6 +63,8 @@ namespace Contrib.KubeClient.CustomResources
 
         public virtual async Task<TResource> CreateAsync(TResource resource, CancellationToken cancellationToken = default)
         {
+            if (resource == null) throw new ArgumentNullException(nameof(resource));
+
             var httpRequest = CreateBaseRequest(resource.Metadata.Namespace);
             var responseMessage = await Http.PostAsJsonAsync(httpRequest, resource, cancellationToken);
             return await responseMessage.ReadContentAsAsync<TResource, StatusV1>();
@@ -77,6 +79,16 @@ namespace Contrib.KubeClient.CustomResources
 
             var httpRequest = CreateBaseRequest(@namespace).WithRelativeUri(name);
             return await PatchResource(patchAction, httpRequest, cancellationToken);
+        }
+
+        public virtual async Task<TResource> ReplaceAsync(TResource resource, CancellationToken cancellationToken = default)
+        {
+            if (resource == null) throw new ArgumentNullException(nameof(resource));
+            if (resource.Metadata.ResourceVersion == null) throw new ArgumentException($"{nameof(KubeResourceV1.Metadata)}.{nameof(ObjectMetaV1.ResourceVersion)} must be set. This is the case only when the object was retrieved from the Kubernetes API.", nameof(resource));
+
+            var httpRequest = CreateBaseRequest(resource.Metadata.Namespace).WithRelativeUri(resource.Metadata.Name);
+            var responseMessage = await Http.PutAsJsonAsync(httpRequest, resource, cancellationToken);
+            return await responseMessage.ReadContentAsAsync<TResource, StatusV1>();
         }
 
         public virtual async Task<TResource> DeleteAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default)
