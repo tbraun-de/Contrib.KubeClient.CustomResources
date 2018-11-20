@@ -64,7 +64,7 @@ namespace Contrib.KubeClient.CustomResources
         {
             var httpRequest = CreateBaseRequest(resource.Metadata.Namespace);
             var responseMessage = await Http.PostAsJsonAsync(httpRequest, resource, cancellationToken);
-            return await responseMessage.ReadContentAsAsync<TResource, StatusV1>(responseMessage.StatusCode);
+            return await responseMessage.ReadContentAsAsync<TResource, StatusV1>();
         }
 
         public virtual async Task<TResource> UpdateAsync(string name, Action<JsonPatchDocument<TResource>> patchAction, string @namespace = null, CancellationToken cancellationToken = default)
@@ -86,7 +86,7 @@ namespace Contrib.KubeClient.CustomResources
             var httpRequest = CreateBaseRequest(@namespace).WithRelativeUri(resourceName);
             var responseMessage = await Http.DeleteAsJsonAsync(httpRequest, deleteOptions, cancellationToken);
 
-            return await responseMessage.ReadContentAsAsync<TResource, StatusV1>(responseMessage.StatusCode);
+            return await responseMessage.ReadContentAsAsync<TResource, StatusV1>();
         }
 
         private HttpRequest CreateBaseRequest(string @namespace)
