@@ -20,7 +20,7 @@
     <Copyright>Copyright (c) AXOOM GmbH</Copyright>
     <Description>KubeClient contribution to simplify work with CustomResources</Description>
     <PackageProjectUrl>https://github.com/AXOOM/Contrib.KubeClient.CustomResources</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/AXOOM/Contrib.KubeClient.CustomResources/blob/develop/LICENSE</PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>Kubernetes;CustomResources;CRD</PackageTags>
   </PropertyGroup>
 
