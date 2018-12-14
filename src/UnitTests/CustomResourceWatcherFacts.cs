@@ -1,9 +1,9 @@
 using System;
-using System.Linq;
-using System.Net;
+using System.Collections.Generic;
 using System.Reactive.Subjects;
+using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
-using HTTPlease;
 using KubeClient.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -11,241 +11,145 @@ using Xunit;
 
 namespace Contrib.KubeClient.CustomResources
 {
-    public class CustomResourceWatcherFacts
+    public class CustomResourceWatcherFacts : IDisposable
     {
-        private readonly TestResourceWatcher _watcher;
-        private readonly Subject<IResourceEventV1<Mock1Resource>> _resourceSubject;
-        private readonly Mock<ICustomResourceClient<Mock1Resource>> _resourceClientMock;
+        private const string TestNamespace = "test-namespace";
+        private const string TestResourceVersion = "5";
+        private readonly CustomResourceWatcher<Mock1Resource> _watcher;
+
+        private readonly List<Mock1Resource> _items;
+        private readonly Mock<ICustomResourceClient<Mock1Resource>> _clientMock = new Mock<ICustomResourceClient<Mock1Resource>>();
+        private readonly Subject<IResourceEventV1<Mock1Resource>> _events = new Subject<IResourceEventV1<Mock1Resource>>();
 
         public CustomResourceWatcherFacts()
         {
-            _resourceSubject = new Subject<IResourceEventV1<Mock1Resource>>();
-            _resourceClientMock = new Mock<ICustomResourceClient<Mock1Resource>>();
-            _resourceClientMock.SetupSequence(mock => mock.Watch(It.IsAny<string>(), It.IsAny<string>()))
-                               .Returns(_resourceSubject)
-                               .Returns(new Subject<IResourceEventV1<Mock1Resource>>());
-            _watcher = new TestResourceWatcher(_resourceClientMock.Object);
-            _watcher.Start();
-        }
-
-        [Fact]
-        public void AddedResourceGetsAddedToCache()
-        {
-            var expectedResource = CreateResourceEvent(ResourceEventType.Added, "expectedClientId", resourceVersion: "1");
-
-            _resourceSubject.OnNext(expectedResource);
-
-            _watcher.RawResources.Should().Contain(expectedResource.Resource);
-        }
-
-        [Fact]
-        public void ModifiedResourceGetsUpdatedInCache()
-        {
-            var addedResource = CreateResourceEvent(ResourceEventType.Added, "expectedClientId", resourceVersion: "4711");
-            var modifiedResource = CreateResourceEvent(ResourceEventType.Modified, "expectedClientId", resourceVersion: "4712");
-            modifiedResource.Resource.Spec = "clientName";
-            _resourceSubject.OnNext(addedResource);
-
-            _resourceSubject.OnNext(modifiedResource);
-
-            _watcher.RawResources.Should().Contain(modifiedResource.Resource);
-        }
-
-        [Fact]
-        public void DeletedResourceGetsRemovedFromCache()
-        {
-            var watcherResources = _watcher.RawResources;
-
-            var addedResource = CreateResourceEvent(ResourceEventType.Added, "expectedClientId", resourceVersion: "1");
-            var removedResource = CreateResourceEvent(ResourceEventType.Deleted, "expectedClientId", resourceVersion: "2");
-            _resourceSubject.OnNext(addedResource);
-            _resourceSubject.OnNext(removedResource);
-
-            watcherResources.Should().BeEmpty();
-        }
-
-        [Fact]
-        public void RaisesConnectedEvent()
-        {
-            _watcher.ConnectedTriggered.Should().BeTrue();
-        }
-
-        [Fact]
-        public void RaisesConnectionErrorEvent()
-        {
-            _watcher.Start();
-
-            _resourceSubject.OnError(new Exception());
-
-            _watcher.ConnectionErrorTriggered.Should().BeTrue();
-        }
-
-        [Fact]
-        public void RaisesDataChangedEvent()
-        {
-            _watcher.Start();
-
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "1", resourceVersion: "1"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "1", resourceVersion: "2"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Deleted, uid: "1", resourceVersion: "3"));
-
-            _watcher.DataChangedTriggeredCount.Should().Be(3);
-        }
-
-        [Fact]
-        public void RaisesDataChangedEventOnCacheInvalidation()
-        {
-            _watcher.Start();
-
-            _resourceSubject.OnError(new HttpRequestException<StatusV1>(HttpStatusCode.Gone, new StatusV1()));
-
-            _watcher.DataChangedTriggered.Should().BeTrue();
-        }
-
-        [Fact]
-        public void DoesNotRaiseDataChangedEventWhenNothingChanged()
-        {
-            _watcher.Start();
-
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "1", resourceVersion: "1"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "1", resourceVersion: "2"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "1", resourceVersion: "2"));
-
-            _watcher.DataChangedTriggeredCount.Should().Be(2);
-        }
-
-        [Fact]
-        public void ResubscribesOnError()
-        {
-            _watcher.Start();
-
-            _resourceSubject.OnError(new Exception());
-
-            _resourceClientMock.Verify(mock => mock.Watch(It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(2));
-        }
-
-        [Fact]
-        public void ResubscribesOnCompletion()
-        {
-            _watcher.Start();
-
-            _resourceSubject.OnCompleted();
-
-            _resourceClientMock.Verify(mock => mock.Watch(It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(2));
-        }
-
-        [Fact]
-        public void DoesNotResubscribeAfterStop()
-        {
-            _watcher.Start();
-            _watcher.Stop();
-            _resourceSubject.OnCompleted();
-
-            _resourceClientMock.Verify(mock => mock.Watch(It.IsAny<string>(), It.IsAny<string>()), Times.Exactly(1));
-        }
-
-        [Fact]
-        public void PassesLastResourceVersionOnReconnect()
-        {
-            _watcher.Start();
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "4711", resourceVersion: "35"));
-
-            _resourceSubject.OnError(new Exception());
-
-            _resourceClientMock.Verify(mock => mock.Watch(It.IsAny<string>(), "35"));
-        }
-
-        [Fact]
-        public void DropsCacheWhenResourceIsGone()
-        {
-            _watcher.Start();
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "4711", resourceVersion: "35"));
-
-            _resourceSubject.OnError(new HttpRequestException<StatusV1>(HttpStatusCode.Gone, new StatusV1()));
-
-            _watcher.RawResources.Should().BeEmpty();
-        }
-
-        [Fact]
-        public void DropsResourceEventIfOlderThanLastKnown()
-        {
-            _watcher.Start();
-
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "resource", resourceVersion: "10"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "resource", resourceVersion: "12"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "resource", resourceVersion: "11"));
-
-            _watcher.RawResources.First().Metadata.ResourceVersion.Should().Be("12");
-        }
-
-        [Fact]
-        public void DoesNotDropResourceEventIfVersionIsSmallerButDifferentResource()
-        {
-            _watcher.Start();
-
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Added, uid: "resource", resourceVersion: "10"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "resource", resourceVersion: "12"));
-            _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Modified, uid: "anotherResource", resourceVersion: "9"));
-
-            _watcher.RawResources.Single(r => r.Metadata.Uid == "resource").Metadata.ResourceVersion.Should().Be("12");
-            _watcher.RawResources.Single(r => r.Metadata.Uid == "anotherResource").Metadata.ResourceVersion.Should().Be("9");
-        }
-
-        [Fact]
-        public void ReceivingErroneousResourceEventDoesNotThrow()
-        {
-            _watcher.Start();
-
-            Action receivingErroneousResourceEvent = () => _resourceSubject.OnNext(CreateResourceEvent(ResourceEventType.Error, uid: "resource", resourceVersion: "1"));
-
-            receivingErroneousResourceEvent.Should().NotThrow();
-        }
-
-        [Fact]
-        public void ReceivingUnknownResourceEventTypeThrowsArgumentOutOfRangeException()
-        {
-            _watcher.Start();
-
-            Action receivingUnknownResourceEventType = () => _resourceSubject.OnNext(CreateResourceEvent((ResourceEventType)(-1), uid: "resource", resourceVersion: "1"));
-
-            receivingUnknownResourceEventType.Should().Throw<ArgumentOutOfRangeException>();
-        }
-
-        private static ResourceEventV1<Mock1Resource> CreateResourceEvent(ResourceEventType eventType, string uid, string resourceVersion)
-            => new ResourceEventV1<Mock1Resource>
+            var list = new CustomResourceList<Mock1Resource>
             {
-                EventType = eventType,
-                Resource = new Mock1Resource
-                {
-                    Metadata = new ObjectMetaV1
-                    {
-                        Namespace = "namespace",
-                        Name = uid,
-                        ResourceVersion = resourceVersion,
-                        Uid = uid
-                    },
-                    Spec = uid
-                }
+                Metadata = new ListMetaV1 {ResourceVersion = TestResourceVersion}
             };
+            _items = list.Items;
 
-        private class TestResourceWatcher : CustomResourceWatcher<Mock1Resource>
-        {
-            public TestResourceWatcher(ICustomResourceClient<Mock1Resource> client)
-                : base(new Logger<CustomResourceWatcher<Mock1Resource>>(new LoggerFactory()), client, new CustomResourceNamespace<Mock1Resource>(""))
-            {
-                Connected += (sender, args) => ConnectedTriggered = true;
-                ConnectionError += (sender, args) => ConnectionErrorTriggered = true;
-                DataChanged += (sender, args) =>
-                {
-                    DataChangedTriggered = true;
-                    ++DataChangedTriggeredCount;
-                };
-            }
+            _clientMock.Setup(x => x.ListAsync(null, TestNamespace, CancellationToken.None))
+                      .ReturnsAsync(list);
+            _clientMock.SetupSequence(x => x.Watch(TestNamespace, TestResourceVersion))
+                      .Returns(_events)
+                      .Returns(new Subject<IResourceEventV1<Mock1Resource>>());
 
-            public bool ConnectedTriggered { get; private set; }
-            public bool ConnectionErrorTriggered { get; private set; }
-            public bool DataChangedTriggered { get; private set; }
-            public int DataChangedTriggeredCount { get; private set; }
+            _watcher = new CustomResourceWatcher<Mock1Resource>(
+                new LoggerFactory().CreateLogger<CustomResourceWatcher<Mock1Resource>>(),
+                _clientMock.Object,
+                new CustomResourceNamespace<Mock1Resource>(TestNamespace));
         }
+
+        public void Dispose() => _watcher.Dispose();
+
+        [Fact]
+        public async Task InitialListGetsAddedToCache()
+        {
+            var resource1 = new Mock1Resource(TestNamespace, "1");
+            var resource2 = new Mock1Resource(TestNamespace, "2");
+
+            _items.Add(resource1);
+            _items.Add(resource2);
+            await _watcher.StartAsync();
+
+            _watcher.Should().BeEquivalentTo(resource1, resource2);
+        }
+
+        [Fact]
+        public async Task AddedResourceGetsAddedToCache()
+        {
+            var resource1 = new Mock1Resource(TestNamespace, "1");
+            var resource2 = new Mock1Resource(TestNamespace, "2");
+
+            _items.Add(resource1);
+            await _watcher.StartAsync();
+            _events.OnNext(Added(resource2));
+
+            _watcher.Should().BeEquivalentTo(resource1, resource2);
+        }
+
+        [Fact]
+        public async Task ModifiedResourceGetsUpdatedInCache()
+        {
+            var resource1A = new Mock1Resource(TestNamespace, "1") {Spec = "a"};
+            var resource1B = new Mock1Resource(TestNamespace, "1") {Spec = "b"};
+
+            _items.Add(resource1A);
+            await _watcher.StartAsync();
+            _events.OnNext(Modified(resource1B));
+
+            _watcher.Should().BeEquivalentTo(resource1B);
+        }
+
+        [Fact]
+        public async Task DeletedResourceGetsRemovedFromCache()
+        {
+            var resource1 = new Mock1Resource(TestNamespace, "1");
+            var resource2 = new Mock1Resource(TestNamespace, "2");
+
+            _items.Add(resource1);
+            _items.Add(resource2);
+            await _watcher.StartAsync();
+            _events.OnNext(Deleted(resource2));
+
+            _watcher.Should().BeEquivalentTo(resource1);
+        }
+
+        [Fact]
+        public async Task RaisesDataChangedEvent()
+        {
+            int triggerCounter = 0;
+            _watcher.DataChanged += delegate { triggerCounter++; };
+
+            _items.Add(new Mock1Resource(TestNamespace, "1"));
+            _items.Add(new Mock1Resource(TestNamespace, "2"));
+            await _watcher.StartAsync();
+            triggerCounter.Should().Be(1);
+
+            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "1")));
+            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "2")));
+            triggerCounter.Should().Be(3);
+        }
+
+        [Fact]
+        public async Task ResubscribesOnCompletion()
+        {
+            await _watcher.StartAsync();
+            _events.OnCompleted();
+
+            _clientMock.Verify(x => x.ListAsync(null, TestNamespace, CancellationToken.None), Times.Exactly(2));
+            _clientMock.Verify(x => x.Watch(TestNamespace, TestResourceVersion), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task ResubscribesOnError()
+        {
+            await _watcher.StartAsync();
+            _events.OnError(new Exception());
+
+            _clientMock.Verify(x => x.ListAsync(null, TestNamespace, CancellationToken.None), Times.Exactly(2));
+            _clientMock.Verify(x => x.Watch(TestNamespace, TestResourceVersion), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task DoesNotResubscribeAfterStop()
+        {
+            await _watcher.StartAsync();
+            await _watcher.StopAsync();
+            _events.OnCompleted();
+
+            _clientMock.Verify(x => x.ListAsync(null, TestNamespace, CancellationToken.None), Times.Once);
+            _clientMock.Verify(x => x.Watch(TestNamespace, TestResourceVersion), Times.Once);
+        }
+
+        private static IResourceEventV1<Mock1Resource> Added(Mock1Resource resource)
+            => new ResourceEventV1<Mock1Resource> {EventType = ResourceEventType.Added, Resource = resource};
+
+        private static IResourceEventV1<Mock1Resource> Modified(Mock1Resource resource)
+            => new ResourceEventV1<Mock1Resource> {EventType = ResourceEventType.Modified, Resource = resource};
+
+        private static IResourceEventV1<Mock1Resource> Deleted(Mock1Resource resource)
+            => new ResourceEventV1<Mock1Resource> {EventType = ResourceEventType.Deleted, Resource = resource};
     }
 }

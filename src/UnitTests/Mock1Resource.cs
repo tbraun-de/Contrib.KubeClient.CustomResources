@@ -12,7 +12,9 @@ namespace Contrib.KubeClient.CustomResources
 
         public Mock1Resource(string @namespace = null, string name = null, string spec = null)
             : base(Definition, @namespace, name, spec)
-        {}
+        {
+            Metadata.Uid = $"{@namespace}/{name}";
+        }
 
         public void ToPayloadPatch(JsonPatchDocument<Mock1Resource> patch)
             => patch.Replace(x => x.Spec, Spec);
