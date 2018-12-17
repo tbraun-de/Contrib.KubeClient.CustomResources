@@ -14,6 +14,7 @@ namespace Contrib.KubeClient.CustomResources
             : base(Definition, @namespace, name, spec)
         {
             Metadata.Uid = $"{@namespace}/{name}";
+            Metadata.ResourceVersion = spec;
         }
 
         public void ToPayloadPatch(JsonPatchDocument<Mock1Resource> patch)

@@ -1,4 +1,3 @@
-using System;
 using JetBrains.Annotations;
 using KubeClient.Models;
 using Newtonsoft.Json;
@@ -31,12 +30,6 @@ namespace Contrib.KubeClient.CustomResources
                 Name = name
             };
         }
-
-        [JsonIgnore]
-        public string GlobalName
-            => string.IsNullOrWhiteSpace(Metadata.Namespace)
-                ? $"[cluster].{Metadata.Name}"
-                : $"{Metadata.Namespace}.{Metadata.Name}";
 
         public override bool Equals(object obj)
             => obj is CustomResource other

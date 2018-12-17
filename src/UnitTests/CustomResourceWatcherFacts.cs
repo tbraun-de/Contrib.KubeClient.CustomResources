@@ -20,6 +20,7 @@ namespace Contrib.KubeClient.CustomResources
         private readonly List<Mock1Resource> _items;
         private readonly Mock<ICustomResourceClient<Mock1Resource>> _clientMock = new Mock<ICustomResourceClient<Mock1Resource>>();
         private readonly Subject<IResourceEventV1<Mock1Resource>> _events = new Subject<IResourceEventV1<Mock1Resource>>();
+        private int _dataChangedCounter;
 
         public CustomResourceWatcherFacts()
         {
@@ -39,6 +40,7 @@ namespace Contrib.KubeClient.CustomResources
                 new LoggerFactory().CreateLogger<CustomResourceWatcher<Mock1Resource>>(),
                 _clientMock.Object,
                 new CustomResourceNamespace<Mock1Resource>(TestNamespace));
+            _watcher.DataChanged += delegate { _dataChangedCounter++; };
         }
 
         public void Dispose() => _watcher.Dispose();
@@ -72,8 +74,8 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public async Task ModifiedResourceGetsUpdatedInCache()
         {
-            var resource1A = new Mock1Resource(TestNamespace, "1") {Spec = "a"};
-            var resource1B = new Mock1Resource(TestNamespace, "1") {Spec = "b"};
+            var resource1A = new Mock1Resource(TestNamespace, "1", spec: "1a");
+            var resource1B = new Mock1Resource(TestNamespace, "1", spec: "1b");
 
             _items.Add(resource1A);
             await _watcher.StartAsync();
@@ -97,19 +99,35 @@ namespace Contrib.KubeClient.CustomResources
         }
 
         [Fact]
-        public async Task RaisesDataChangedEvent()
+        public async Task RaisesDataChangedEventForUpdates()
         {
-            int triggerCounter = 0;
-            _watcher.DataChanged += delegate { triggerCounter++; };
-
-            _items.Add(new Mock1Resource(TestNamespace, "1"));
-            _items.Add(new Mock1Resource(TestNamespace, "2"));
+            _items.Add(new Mock1Resource(TestNamespace, "1", spec: "1a"));
+            _items.Add(new Mock1Resource(TestNamespace, "2", spec: "2a"));
             await _watcher.StartAsync();
-            triggerCounter.Should().Be(1);
+            _dataChangedCounter.Should().Be(1);
 
-            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "1")));
-            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "2")));
-            triggerCounter.Should().Be(3);
+            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "1", spec: "1b")));
+            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "2", spec: "2b")));
+            _dataChangedCounter.Should().Be(3);
+        }
+
+        [Fact]
+        public async Task RaisesDataChangedEventForEmptyList()
+        {
+            await _watcher.StartAsync();
+            _dataChangedCounter.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task DoesNotRaisesDataChangedEventForNoOps()
+        {
+            _items.Add(new Mock1Resource(TestNamespace, "1", spec: "1a"));
+            await _watcher.StartAsync();
+            _dataChangedCounter.Should().Be(1);
+
+            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "1", spec: "1a")));
+            _events.OnNext(Deleted(new Mock1Resource(TestNamespace, "2")));
+            _dataChangedCounter.Should().Be(1);
         }
 
         [Fact]

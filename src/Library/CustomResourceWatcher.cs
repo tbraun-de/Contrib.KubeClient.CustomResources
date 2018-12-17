@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -22,14 +23,7 @@ namespace Contrib.KubeClient.CustomResources
         private readonly CustomResourceDefinition _crd;
         private readonly ICustomResourceClient<TResource> _client;
         [NotNull] private readonly string _namespace;
-
-        private readonly object _resourcesLock = new object();
-        private IDictionary<string, TResource> _resources;
-
-        private readonly object _subscriptionLock = new object();
-        private IDisposable _subscription;
-
-        public event EventHandler DataChanged;
+        private readonly IDictionary<string, TResource> _resources = new ConcurrentDictionary<string, TResource>();
 
         public CustomResourceWatcher(ILogger<CustomResourceWatcher<TResource>> logger, ICustomResourceClient<TResource> client, CustomResourceNamespace<TResource> @namespace = null)
         {
@@ -39,12 +33,9 @@ namespace Contrib.KubeClient.CustomResources
             _namespace = @namespace?.Value ?? "";
         }
 
-        public IEnumerator<TResource> GetEnumerator()
-        {
-            lock (_resourcesLock)
-                return (_resources?.Values.ToList() ?? Enumerable.Empty<TResource>()).GetEnumerator();
-        }
+        public event EventHandler DataChanged;
 
+        public IEnumerator<TResource> GetEnumerator() => _resources.Select(x => x.Value).GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public async Task StartAsync(CancellationToken cancellationToken = default)
@@ -53,6 +44,9 @@ namespace Contrib.KubeClient.CustomResources
 
             await SubscribeAsync();
         }
+
+        private readonly object _subscriptionLock = new object();
+        private IDisposable _subscription;
 
         public Task StopAsync(CancellationToken cancellationToken = default)
         {
@@ -83,14 +77,26 @@ namespace Contrib.KubeClient.CustomResources
             _logger.LogDebug("Subscribed to {0}.", _crd);
         }
 
+        private bool _firstRun = true;
+
         private void OnList(IEnumerable<TResource> resources)
         {
-            lock (_resourcesLock)
+            bool changed = false;
+            var expectedUids = new HashSet<string>();
+
+            foreach (var resource in resources)
             {
-                _resources = resources.ToDictionary(x => x.Metadata.Uid, x => x);
-                _logger.LogDebug("Got full list of {0}: {1} elements", _crd, _resources.Count);
+                changed |= Upsert(resource);
+                expectedUids.Add(resource.Metadata.Uid);
             }
-            OnDataChanged();
+
+            foreach (string uid in _resources.Keys.Except(expectedUids))
+                changed |= Remove(uid);
+
+            if (changed || _firstRun)
+                OnDataChanged();
+
+            _firstRun = false;
         }
 
         private void OnNext(IResourceEventV1<TResource> @event)
@@ -99,23 +105,48 @@ namespace Contrib.KubeClient.CustomResources
             {
                 case ResourceEventType.Added:
                 case ResourceEventType.Modified:
-                    lock (_resourcesLock)
-                        _resources[@event.Resource.Metadata.Uid] = @event.Resource;
-                    _logger.LogDebug("Upserted {0}: {1}", _crd, @event.Resource.GlobalName);
+                    if (Upsert(@event.Resource))
+                        OnDataChanged();
                     break;
 
                 case ResourceEventType.Deleted:
-                    lock (_resourcesLock)
-                        _resources.Remove(@event.Resource.Metadata.Uid);
-                    _logger.LogDebug("Removed {0}: {1}", _crd, @event.Resource.GlobalName);
+                    if (Remove(@event.Resource.Metadata.Uid))
+                        OnDataChanged();
                     break;
 
                 default:
                     _logger.LogWarning("Unexpected event for {0}: {1}.", _crd, @event.EventType);
-                    return;
+                    break;
             }
+        }
 
-            OnDataChanged();
+        private bool Upsert(TResource resource)
+        {
+            if (_resources.TryGetValue(resource.Metadata.Uid, out var existing) && existing.Metadata.ResourceVersion == resource.Metadata.ResourceVersion)
+            {
+                _logger.LogTrace("Unchanged {0}: {1}", _crd, resource.Metadata.Uid);
+                return false;
+            }
+            else
+            {
+                _resources[resource.Metadata.Uid] = resource;
+                _logger.LogDebug("Upserted {0}: {1}", _crd, resource.Metadata.Uid);
+                return true;
+            }
+        }
+
+        private bool Remove(string uid)
+        {
+            if (_resources.Remove(uid))
+            {
+                _logger.LogDebug("Removed {0}: {1}", _crd, uid);
+                return true;
+            }
+            else
+            {
+                _logger.LogTrace("Already removed {0}: {1}", _crd, uid);
+                return false;
+            }
         }
 
         private void OnDataChanged() => DataChanged?.Invoke(this, new EventArgs());
