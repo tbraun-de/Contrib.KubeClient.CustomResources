@@ -23,7 +23,7 @@ namespace Contrib.KubeClient.CustomResources
         private readonly CustomResourceDefinition _crd;
         private readonly ICustomResourceClient<TResource> _client;
         [NotNull] private readonly string _namespace;
-        private readonly IDictionary<string, TResource> _resources = new ConcurrentDictionary<string, TResource>();
+        private readonly ConcurrentDictionary<string, TResource> _resources = new ConcurrentDictionary<string, TResource>();
 
         public CustomResourceWatcher(ILogger<CustomResourceWatcher<TResource>> logger, ICustomResourceClient<TResource> client, CustomResourceNamespace<TResource> @namespace = null)
         {
@@ -124,22 +124,22 @@ namespace Contrib.KubeClient.CustomResources
         {
             if (_resources.TryGetValue(resource.Metadata.Uid, out var existing) && existing.Metadata.ResourceVersion == resource.Metadata.ResourceVersion)
             {
-                _logger.LogTrace("Unchanged {0}: {1}", _crd, resource.Metadata.Uid);
+                _logger.LogTrace("Unchanged {0}: {1}", _crd, resource.Metadata.Name);
                 return false;
             }
             else
             {
                 _resources[resource.Metadata.Uid] = resource;
-                _logger.LogDebug("Upserted {0}: {1}", _crd, resource.Metadata.Uid);
+                _logger.LogDebug("Upserted {0}: {1}", _crd, resource.Metadata.Name);
                 return true;
             }
         }
 
         private bool Remove(string uid)
         {
-            if (_resources.Remove(uid))
+            if (_resources.TryRemove(uid, out var resource))
             {
-                _logger.LogDebug("Removed {0}: {1}", _crd, uid);
+                _logger.LogDebug("Removed {0}: {1}", _crd, resource.Metadata.Name);
                 return true;
             }
             else
