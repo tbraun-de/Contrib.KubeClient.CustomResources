@@ -175,7 +175,7 @@ namespace Contrib.KubeClient.CustomResources
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Resubscribing for {0} failed. Retrying in 10 seconds.");
+                    _logger.LogError(ex, "Resubscribing for {0} failed. Retrying in 10 seconds.", _crd);
                     await Task.Delay(TimeSpan.FromSeconds(10), _cancellationTokenSource.Token);
                 }
             }
