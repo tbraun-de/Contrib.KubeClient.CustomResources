@@ -4,8 +4,12 @@ using System.Threading.Tasks;
 using HTTPlease;
 using KubeClient;
 using KubeClient.Models;
+using KubeClient.Models.Converters;
 using KubeClient.ResourceClients;
 using Microsoft.AspNetCore.JsonPatch;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -104,12 +108,33 @@ namespace Contrib.KubeClient.CustomResources
 
         private HttpRequest CreateBaseRequest(string @namespace)
         {
-            var httpRequest = KubeRequest.Create($"/apis/{_crd.ApiVersion}");
+            var httpRequest = KubeRequest.Create($"/apis/{_crd.ApiVersion}")
+                                         .UseJson(SerializerSettings);
 
             if (!string.IsNullOrWhiteSpace(@namespace))
                 httpRequest = httpRequest.WithRelativeUri($"namespaces/{@namespace}/");
 
             return httpRequest.WithRelativeUri(_crd.PluralName);
+        }
+
+        private new JsonSerializerSettings SerializerSettings
+        {
+            get
+            {
+                var serializerSettings = new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore,
+                    ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                    Converters =
+                    {
+                        new StringEnumConverter(),
+                        new Int32OrStringV1Converter()
+                    }
+                };
+                foreach (var converter in _crd.Converters)
+                    serializerSettings.Converters.Add(converter);
+                return serializerSettings;
+            }
         }
     }
 }

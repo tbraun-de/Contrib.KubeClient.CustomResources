@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -21,6 +23,11 @@ namespace Contrib.KubeClient.CustomResources
         /// The singular upper-case name of the resource (see <code>spec.names.kind</code>).
         /// </summary>
         public string Kind { get; }
+
+        /// <summary>
+        /// A list of additional JSON Converters to use when serializing/deserializing this type of Custom Resource.
+        /// </summary>
+        public List<JsonConverter> Converters { get; } = new List<JsonConverter>();
 
         /// <summary>
         /// Creates a new Kubernetes Custom Resource Definition.
