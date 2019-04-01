@@ -1,6 +1,8 @@
 using System;
-using System.Collections.Generic;
+using KubeClient.Models.Converters;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 
 namespace Contrib.KubeClient.CustomResources
 {
@@ -25,9 +27,18 @@ namespace Contrib.KubeClient.CustomResources
         public string Kind { get; }
 
         /// <summary>
-        /// A list of additional JSON Converters to use when serializing/deserializing this type of Custom Resource.
+        /// Settings to use when serializing/deserializing this type of Custom Resource.
         /// </summary>
-        public List<JsonConverter> Converters { get; } = new List<JsonConverter>();
+        public JsonSerializerSettings SerializerSettings { get; } = new JsonSerializerSettings
+        {
+            NullValueHandling = NullValueHandling.Ignore,
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            Converters =
+            {
+                new StringEnumConverter(),
+                new Int32OrStringV1Converter()
+            }
+        };
 
         /// <summary>
         /// Creates a new Kubernetes Custom Resource Definition.
