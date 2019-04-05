@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using HTTPlease;
-using HTTPlease.Formatters;
+using HTTPlease.Formatters.Json;
 using KubeClient;
 using KubeClient.Models;
 using KubeClient.ResourceClients;
@@ -105,12 +105,18 @@ namespace Contrib.KubeClient.CustomResources
 
         private HttpRequest CreateBaseRequest(string @namespace)
         {
-            var httpRequest = KubeRequest.Create($"/apis/{_crd.ApiVersion}")
-                                         .UseJson(_crd.SerializerSettings);
 
-            // Ensure response deserialization uses same formatters as request serialization
-            var formatters = new FormatterCollection(httpRequest.GetFormatters().Values);
-            httpRequest.RequestActions.Add((message, _) => message.SetFormatters(formatters));
+            var httpRequest = HttpRequest.Create(new Uri($"/apis/{_crd.ApiVersion}"))
+                                         .ExpectJson()
+                                         .WithFormatter(new JsonFormatter()
+                                          {
+                                              SerializerSettings = _crd.SerializerSettings,
+                                              SupportedMediaTypes =
+                                              {
+                                                  PatchMediaType,
+                                                  MergePatchMediaType
+                                              }
+                                          });
 
             if (!string.IsNullOrWhiteSpace(@namespace))
                 httpRequest = httpRequest.WithRelativeUri($"namespaces/{@namespace}/");
