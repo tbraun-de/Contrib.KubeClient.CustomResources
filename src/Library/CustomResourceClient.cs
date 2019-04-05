@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using HTTPlease;
+using HTTPlease.Formatters;
 using KubeClient;
 using KubeClient.Models;
 using KubeClient.ResourceClients;
@@ -106,6 +107,10 @@ namespace Contrib.KubeClient.CustomResources
         {
             var httpRequest = KubeRequest.Create($"/apis/{_crd.ApiVersion}")
                                          .UseJson(_crd.SerializerSettings);
+
+            // Ensure response deserialization uses same formatters as request serialization
+            var formatters = new FormatterCollection(httpRequest.GetFormatters().Values);
+            httpRequest.RequestActions.Add((message, _) => message.SetFormatters(formatters));
 
             if (!string.IsNullOrWhiteSpace(@namespace))
                 httpRequest = httpRequest.WithRelativeUri($"namespaces/{@namespace}/");
