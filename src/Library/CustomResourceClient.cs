@@ -105,8 +105,7 @@ namespace Contrib.KubeClient.CustomResources
 
         private HttpRequest CreateBaseRequest(string @namespace)
         {
-
-            var httpRequest = HttpRequest.Create(new Uri($"/apis/{_crd.ApiVersion}"))
+            var httpRequest = HttpRequest.Create(new Uri($"/apis/{_crd.ApiVersion}", UriKind.Relative))
                                          .ExpectJson()
                                          .WithFormatter(new JsonFormatter()
                                           {
