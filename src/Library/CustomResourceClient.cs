@@ -1,4 +1,5 @@
 using System;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HTTPlease;
@@ -42,7 +43,8 @@ namespace Contrib.KubeClient.CustomResources
                              .WithQueryParameter("resourceVersion", resourceVersionOffset)
                              .WithQueryParameter("timeoutSeconds", WatchTimeout.TotalSeconds);
 
-            return ObserveEvents<TResource>(httpRequest, operationDescription: $"watch '{_crd.PluralName}'");
+            return ObserveEvents<TResource>(httpRequest, operationDescription: $"watch '{_crd.PluralName}'")
+               .Timeout(WatchTimeout);
         }
 
         public async Task<CustomResourceList<TResource>> ListAsync(string labelSelector = null, string @namespace = null, CancellationToken cancellationToken = default)
