@@ -44,7 +44,7 @@ namespace Contrib.KubeClient.CustomResources
                              .WithQueryParameter("timeoutSeconds", WatchTimeout.TotalSeconds);
 
             return ObserveEvents<TResource>(httpRequest, operationDescription: $"watch '{_crd.PluralName}'")
-               .Timeout(WatchTimeout);
+               .Timeout(WatchTimeout + TimeSpan.FromSeconds(30)); // Enforce client-side timeout in addition to server-side
         }
 
         public async Task<CustomResourceList<TResource>> ListAsync(string labelSelector = null, string @namespace = null, CancellationToken cancellationToken = default)
