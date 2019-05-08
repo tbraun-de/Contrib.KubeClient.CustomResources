@@ -1,6 +1,9 @@
+using System.Collections.Generic;
+using System.Runtime.Serialization;
 using JetBrains.Annotations;
 using KubeClient.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using YamlDotNet.Serialization;
 
 namespace Contrib.KubeClient.CustomResources
@@ -52,6 +55,28 @@ namespace Contrib.KubeClient.CustomResources
                 hashCode = (hashCode * 397) ^ (Metadata?.Name?.GetHashCode() ?? 0);
                 return hashCode;
             }
+        }
+
+        private readonly List<ErrorContext> _serializationErrors = new List<ErrorContext>();
+
+        /// <summary>
+        /// Errors that occured during deserialization.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="ICustomResourceClient{TResource}.ListAsync"/> and <see cref="ICustomResourceClient{TResource}.Watch"/> will report deserialization errors here rather than throwing exceptions.
+        /// This allows you handle individual defective resources without loosing access to all the rest.
+        /// </remarks>
+        [JsonIgnore]
+        public IReadOnlyList<ErrorContext> SerializationErrors => _serializationErrors;
+
+        [OnError]
+        internal void OnError(StreamingContext context, ErrorContext errorContext)
+        {
+            // Invalid metadata may compromise the ability to determine a resource's identity
+            if (errorContext.Path.StartsWith("metadata")) return;
+
+            _serializationErrors.Add(errorContext);
+            errorContext.Handled = true;
         }
     }
 

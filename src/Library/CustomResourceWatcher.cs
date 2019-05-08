@@ -122,7 +122,13 @@ namespace Contrib.KubeClient.CustomResources
 
         private bool Upsert(TResource resource)
         {
-            if (_resources.TryGetValue(resource.Metadata.Uid, out var existing) && existing.Metadata.ResourceVersion == resource.Metadata.ResourceVersion)
+            if (resource.SerializationErrors.Any())
+            {
+                foreach (var error in resource.SerializationErrors)
+                    _logger.LogError(error.Error, "Error deserializing {0}: {1}", _crd, resource.Metadata.Name);
+                return false;
+            }
+            else if (_resources.TryGetValue(resource.Metadata.Uid, out var existing) && existing.Metadata.ResourceVersion == resource.Metadata.ResourceVersion)
             {
                 _logger.LogTrace("Unchanged {0}: {1}", _crd, resource.Metadata.Name);
                 return false;

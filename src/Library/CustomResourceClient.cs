@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,7 +62,12 @@ namespace Contrib.KubeClient.CustomResources
             if (string.IsNullOrWhiteSpace(resourceName)) throw new ArgumentException("Argument cannot be null, empty, or entirely composed of whitespaces.", nameof(resourceName));
 
             var httpRequest = CreateBaseRequest(@namespace).WithRelativeUri(resourceName);
-            return await GetSingleResource<TResource>(httpRequest, cancellationToken);
+            var resource = await GetSingleResource<TResource>(httpRequest, cancellationToken);
+
+            var error = resource.SerializationErrors.FirstOrDefault();
+            if (error != null) throw error.Error;
+
+            return resource;
         }
 
         public virtual async Task<TResource> CreateAsync(TResource resource, CancellationToken cancellationToken = default)

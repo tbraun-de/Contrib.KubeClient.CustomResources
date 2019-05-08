@@ -19,6 +19,7 @@ namespace Contrib.KubeClient.CustomResources
         /// </summary>
         /// <param name="namespace">The target Kubernetes namespace to watch for (leave empty for cluster-wide watch).</param>
         /// <param name="resourceVersionOffset">The resource version to start from (defaults to 0).</param>
+        /// <returns>An event stream. Check <see cref="CustomResource.SerializationErrors"/> for potentially invalid resources.</returns>
         IObservable<IResourceEventV1<TResource>> Watch(string @namespace = "", string resourceVersionOffset = "0");
 
         /// <summary>
@@ -27,6 +28,7 @@ namespace Contrib.KubeClient.CustomResources
         /// <param name="labelSelector">An optional Kubernetes label selector expression used to filter the resources.</param>
         /// <param name="namespace">The namespace to check for resources.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A list of resources. Check <see cref="CustomResource.SerializationErrors"/> for potentially invalid resources.</returns>
         Task<CustomResourceList<TResource>> ListAsync(string labelSelector = null, string @namespace = null, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -35,6 +37,7 @@ namespace Contrib.KubeClient.CustomResources
         /// <param name="resourceName">The name of the target resource to return.</param>
         /// <param name="namespace">The namespace the resource is located in.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>A single resource. Will throw exceptions for invalid resources rather than reporting via <see cref="CustomResource.SerializationErrors"/>.</returns>
         Task<TResource> ReadAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default);
 
         /// <summary>
