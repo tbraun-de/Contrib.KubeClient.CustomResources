@@ -74,8 +74,8 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public async Task ModifiedResourceGetsUpdatedInCache()
         {
-            var resource1A = new Mock1Resource(TestNamespace, "1", spec: "1a");
-            var resource1B = new Mock1Resource(TestNamespace, "1", spec: "1b");
+            var resource1A = new Mock1Resource(TestNamespace, "1", spec: 1);
+            var resource1B = new Mock1Resource(TestNamespace, "1", spec: 2);
 
             _items.Add(resource1A);
             await _watcher.StartAsync();
@@ -101,13 +101,13 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public async Task RaisesDataChangedEventForUpdates()
         {
-            _items.Add(new Mock1Resource(TestNamespace, "1", spec: "1a"));
-            _items.Add(new Mock1Resource(TestNamespace, "2", spec: "2a"));
+            _items.Add(new Mock1Resource(TestNamespace, "1", spec: 1));
+            _items.Add(new Mock1Resource(TestNamespace, "2", spec: 2));
             await _watcher.StartAsync();
             _dataChangedCounter.Should().Be(1);
 
-            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "1", spec: "1b")));
-            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "2", spec: "2b")));
+            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "1", spec: 3)));
+            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "2", spec: 4)));
             _dataChangedCounter.Should().Be(3);
         }
 
@@ -121,11 +121,11 @@ namespace Contrib.KubeClient.CustomResources
         [Fact]
         public async Task DoesNotRaisesDataChangedEventForNoOps()
         {
-            _items.Add(new Mock1Resource(TestNamespace, "1", spec: "1a"));
+            _items.Add(new Mock1Resource(TestNamespace, "1", spec: 1));
             await _watcher.StartAsync();
             _dataChangedCounter.Should().Be(1);
 
-            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "1", spec: "1a")));
+            _events.OnNext(Modified(new Mock1Resource(TestNamespace, "1", spec: 1)));
             _events.OnNext(Deleted(new Mock1Resource(TestNamespace, "2")));
             _dataChangedCounter.Should().Be(1);
         }

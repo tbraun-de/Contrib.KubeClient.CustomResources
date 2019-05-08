@@ -22,9 +22,9 @@ namespace Contrib.KubeClient.CustomResources
         {
             const string labelSelector = "a=b";
             const string @namespace = "ns";
-            
-            var item1 = new Mock1Resource(@namespace, "item1", "spec1");
-            var item2 = new Mock1Resource(@namespace, "item2", "spec2");
+
+            var item1 = new Mock1Resource(@namespace, "item1", 1);
+            var item2 = new Mock1Resource(@namespace, "item2", 2);
 
             _clientMock.Setup(x => x.ListAsync(labelSelector, @namespace, CancellationToken.None)).ReturnsAsync(new CustomResourceList<Mock1Resource>
             {
@@ -42,9 +42,9 @@ namespace Contrib.KubeClient.CustomResources
             const string labelSelector = "a=b";
             const string @namespace = "ns";
 
-            var item1 = new Mock1Resource(@namespace, "item1", "spec1");
-            var item2 = new Mock1Resource(@namespace, "item2", "spec2");
-            var item2Mismatch = new Mock1Resource(@namespace, "item2", "spec2x");
+            var item1 = new Mock1Resource(@namespace, "item1", 1);
+            var item2 = new Mock1Resource(@namespace, "item2", 2);
+            var item2Mismatch = new Mock1Resource(@namespace, "item2", 3);
 
             _clientMock.Setup(x => x.ListAsync(labelSelector, @namespace, CancellationToken.None)).ReturnsAsync(new CustomResourceList<Mock1Resource>
             {
@@ -62,8 +62,8 @@ namespace Contrib.KubeClient.CustomResources
             const string labelSelector = "a=b";
             const string @namespace = "ns";
 
-            var item1 = new Mock1Resource(@namespace, "item1", "spec1");
-            var item2 = new Mock1Resource(@namespace, "item2", "spec2");
+            var item1 = new Mock1Resource(@namespace, "item1", 1);
+            var item2 = new Mock1Resource(@namespace, "item2", 2);
 
             _clientMock.Setup(x => x.ListAsync(labelSelector, @namespace, CancellationToken.None)).ReturnsAsync(new CustomResourceList<Mock1Resource>
             {
