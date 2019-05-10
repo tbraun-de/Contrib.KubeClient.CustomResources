@@ -36,7 +36,7 @@ You can also set up a watcher that watches Custom Resources of a specific type f
 services.AddCustomResourceWatcher(PersonResource.Definition, @namespace: "my-kubernetes-namespace");
 ```
 
-The watchers implement the `IHostedService` interface which causes [ASP.NET Core](https://docs.microsoft.com/de-de/aspnet/core/fundamentals/host/hosted-services) to automatically start and stop them with the hosting service.
+The watchers implement the `IHostedService` interface, which causes [ASP.NET Core](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services) to automatically start and stop them with the hosting service.
 
 ## Development
 
