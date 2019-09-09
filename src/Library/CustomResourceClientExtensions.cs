@@ -26,7 +26,7 @@ namespace Contrib.KubeClient.CustomResources
                                                                    Func<TResource, Task> modifyResource,
                                                                    string @namespace = null,
                                                                    CancellationToken cancellationToken = default)
-            where TResource : CustomResource, IPayloadPatchable<TResource>
+            where TResource : CustomResource
         {
             while (true)
             {
@@ -60,7 +60,7 @@ namespace Contrib.KubeClient.CustomResources
                                                              Action<TResource> modifyResource,
                                                              string @namespace = null,
                                                              CancellationToken cancellationToken = default)
-            where TResource : CustomResource, IPayloadPatchable<TResource>
+            where TResource : CustomResource
             => client.UpdateAsync(resourceName, resource =>
             {
                 modifyResource(resource);
