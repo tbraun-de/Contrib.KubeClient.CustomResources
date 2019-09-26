@@ -59,6 +59,14 @@ namespace Contrib.KubeClient.CustomResources
         Task<TResource> UpdateAsync(string name, Action<JsonPatchDocument<TResource>> patchAction, string @namespace = null, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Updates the status sub-resource of an existing resource.
+        /// </summary>
+        /// <param name="resource">The resource to update. Only changes to <see cref="CustomResource{TSpec,TStatus}.Status"/> are persisted.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns>The current state for the updated resource.</returns>
+        Task<TResource> UpdateStatusAsync(TResource resource, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Replaces an existing resource using PUT.
         /// </summary>
         /// <param name="resource">The resource to replace. Must be an object retrieved using <see cref="ListAsync"/> or <see cref="ReadAsync"/> and then modified.</param>

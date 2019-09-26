@@ -90,6 +90,15 @@ namespace Contrib.KubeClient.CustomResources
             return await PatchResource(patchAction, httpRequest, cancellationToken);
         }
 
+        public virtual async Task<TResource> UpdateStatusAsync(TResource resource, CancellationToken cancellationToken = default)
+        {
+            if (resource == null) throw new ArgumentNullException(nameof(resource));
+
+            var httpRequest = CreateBaseRequest(resource.Metadata.Namespace).WithRelativeUri(resource.Metadata.Name + "/status");
+            var responseMessage = await Http.PutAsJsonAsync(httpRequest, resource, cancellationToken);
+            return await responseMessage.ReadContentAsAsync<TResource, StatusV1>();
+        }
+
         public virtual async Task<TResource> ReplaceAsync(TResource resource, CancellationToken cancellationToken = default)
         {
             if (resource == null) throw new ArgumentNullException(nameof(resource));
