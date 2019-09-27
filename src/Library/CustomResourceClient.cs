@@ -87,7 +87,11 @@ namespace Contrib.KubeClient.CustomResources
                 throw new ArgumentNullException(nameof(patchAction));
 
             var httpRequest = CreateBaseRequest(@namespace).WithRelativeUri(name);
-            return await PatchResource(patchAction, httpRequest, cancellationToken);
+            return await PatchResource<TResource>(patch =>
+            {
+                patch.ContractResolver = _crd.SerializerSettings.ContractResolver;
+                patchAction(patch);
+            }, httpRequest, cancellationToken);
         }
 
         public virtual async Task<TResource> UpdateStatusAsync(TResource resource, CancellationToken cancellationToken = default)
