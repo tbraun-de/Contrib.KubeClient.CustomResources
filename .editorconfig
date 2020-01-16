@@ -32,6 +32,12 @@ indent_style = tab
 trim_trailing_whitespace = false
 
 [*.cs]
+# this. preferences
+dotnet_style_qualification_for_field = false:silent
+dotnet_style_qualification_for_property = false:silent
+dotnet_style_qualification_for_method = false:silent
+dotnet_style_qualification_for_event = false:silent
+
 # Indentation
 csharp_indent_block_contents = true
 csharp_indent_braces = false

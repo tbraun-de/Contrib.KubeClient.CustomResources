@@ -37,7 +37,7 @@ namespace Contrib.KubeClient.CustomResources
         /// <param name="resourceName">The name of the target resource to return.</param>
         /// <param name="namespace">The namespace the resource is located in.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A single resource. Will throw exceptions for invalid resources rather than reporting via <see cref="CustomResource.SerializationErrors"/>.</returns>
+        /// <returns>A single resource or null if resource does not exist. Will throw exceptions for invalid resources rather than reporting via <see cref="CustomResource.SerializationErrors"/>.</returns>
         Task<TResource> ReadAsync(string resourceName, string @namespace = null, CancellationToken cancellationToken = default);
 
         /// <summary>

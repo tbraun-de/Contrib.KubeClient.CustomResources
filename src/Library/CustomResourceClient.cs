@@ -64,7 +64,7 @@ namespace Contrib.KubeClient.CustomResources
             var httpRequest = CreateBaseRequest(@namespace).WithRelativeUri(resourceName);
             var resource = await GetSingleResource<TResource>(httpRequest, cancellationToken);
 
-            var error = resource.SerializationErrors.FirstOrDefault();
+            var error = resource?.SerializationErrors.FirstOrDefault();
             if (error != null) throw error.Error;
 
             return resource;
@@ -117,7 +117,7 @@ namespace Contrib.KubeClient.CustomResources
         {
             if (string.IsNullOrWhiteSpace(resourceName)) throw new ArgumentException("Argument cannot be null, empty, or entirely composed of whitespaces.", nameof(resourceName));
 
-            var deleteOptions = new DeleteOptionsV1 {PropagationPolicy = DeletePropagationPolicy.Foreground};
+            var deleteOptions = new DeleteOptionsV1 { PropagationPolicy = DeletePropagationPolicy.Foreground };
             var httpRequest = CreateBaseRequest(@namespace).WithRelativeUri(resourceName);
             var responseMessage = await Http.DeleteAsJsonAsync(httpRequest, deleteOptions, cancellationToken);
 
@@ -129,14 +129,14 @@ namespace Contrib.KubeClient.CustomResources
             var httpRequest = HttpRequest.Create(new Uri($"/apis/{_crd.ApiVersion}", UriKind.Relative))
                                          .ExpectJson()
                                          .WithFormatter(new JsonFormatter()
-                                          {
-                                              SerializerSettings = _crd.SerializerSettings,
-                                              SupportedMediaTypes =
+                                         {
+                                             SerializerSettings = _crd.SerializerSettings,
+                                             SupportedMediaTypes =
                                               {
                                                   PatchMediaType,
                                                   MergePatchMediaType
                                               }
-                                          });
+                                         });
 
             if (!string.IsNullOrWhiteSpace(@namespace))
                 httpRequest = httpRequest.WithRelativeUri($"namespaces/{@namespace}/");
