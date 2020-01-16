@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using KubeClient.Models;
 
 namespace Contrib.KubeClient.CustomResources
@@ -8,6 +8,12 @@ namespace Contrib.KubeClient.CustomResources
     /// </summary>
     public static class KubernetesLabelExtensions
     {
+        /// <summary>
+        /// Gets a Kubernetes label from the resource or an empty string.
+        /// </summary>
+        public static string GetLabelOrStringEmpty(this KubeResourceV1 resource, string key)
+            => resource.Metadata.Labels.TryGetValue(key, out string value) ? value : string.Empty;
+
         /// <summary>
         /// Gets a Kubernetes labels from the resource if present.
         /// </summary>
